@@ -1,0 +1,5 @@
+The chart shows the percentage of households in owned and rented accommodation in England and Wales between 1971 and 2001.
+
+In 1971, the percentage of owned households is 50%. The percentage of rented households is 50%. In 1981, the percentage of owned households is 58%. The percentage of rented households is 42%. In 1991, the percentage of owned households is 67%. The percentage of rented households is 33%. In 2001, the percentage of owned households is 69% and the percentage of rented households is 31%.
+
+There are many differences between the two types of accommodation. The number of owned households increased, and the number of rented households decreased. This trend is very important for the housing market.

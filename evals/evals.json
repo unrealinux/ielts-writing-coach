@@ -1,0 +1,143 @@
+{
+  "skill_name": "ielts-writing-coach",
+  "version": "1.12.0",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我批改一下这篇雅思大作文，题目是：Some people believe that university education should be free for all students. Others think students should pay for their own tuition. Discuss both views and give your own opinion. 作文：\n\nNowadays, with the development of society and economy, more and more people pay attention on the university education...",
+      "expected_output": "给出四项分项预估分与总分（含 .25/.75 取整说明），每项附原文引用的证据；用统一错误代码列出错误清单并给出错误模式小结；提供 3–5 组 before/after 定向改写；生成 Markdown 报告文件并 present",
+      "files": [
+        "evals/samples/sample-task2-essay.txt",
+        "evals/samples/sample-task2-prompt.txt"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "这是我刚写的雅思小作文，Task 1 折线图，帮我看看能拿几分，主要问题在哪？",
+      "expected_output": "先判定 Task 1 子类型；重点检查是否具备独立 overview（缺失则 TA 上限 5.0）；核对是否混入了原因/观点（TA-OPINION）；核对数据是否错报；按 Task Achievement/CC/LR/GRA 四项给分",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "帮我改一下这篇雅思作文。\n\n[只粘贴了作文正文，没有提供题目]",
+      "expected_output": "先索取题目；若用户坚持不提供，则明确标注 Task Response/Task Achievement 未评分，只给 CC/LR/GRA 三项，并在报告写清假设",
+      "files": []
+    },
+    {
+      "id": 4,
+      "prompt": "Task 1 General Training 投诉信，帮我批改，看看三个 bullet point 都写到了吗，语气对不对。",
+      "expected_output": "逐条核对三个 bullet point 是否覆盖、语气（formal/semi-formal/informal）是否一致、称呼与署名是否匹配、是否首段点明目的；漏 bullet 或语气摇摆则 TA 降到 5–6",
+      "files": []
+    },
+    {
+      "id": 5,
+      "prompt": "我目标 7 分，现在大概 6 分，帮我看看提分最快要做什么？这是我的作文。",
+      "expected_output": "报告结尾给出「今天/本周/下一篇作文」三个可量化动作；明确指出从 6 到 7 的瓶颈项（通常是 TR 论证深度或 GRA 复杂句准确性），而不是泛泛说多练习",
+      "files": []
+    },
+    {
+      "id": 6,
+      "prompt": "这篇作文别人给我打了 7 分，你帮我复核一下是不是真的到 7 了。",
+      "expected_output": "按防虚高清单逐条核对；给出 Band 7 门槛的证据要求；如果达不到就照实说明差在哪，不迁就用户预期",
+      "files": []
+    },
+    {
+      "id": 7,
+      "prompt": "帮我看看这篇雅思大作文能打几分：An increasing number of people are choosing to work from home rather than in a traditional office. Do the advantages of this trend outweigh the disadvantages? [作文全文见 sample-task2-hollow-essay.txt]",
+      "expected_output": "识别为「语法干净但论证空洞」型：错误探测零命中，但证据标记 0、具体细节 0、模糊限制语偏多。TR 应显著低于 GRA（TR 5.5 左右，GRA 7.5 左右），不得因为语言干净就抬高总分；批改重心完全放在论证上（尤其 outweigh 类题目必须命名比较维度并在结论回扣）",
+      "files": [
+        "evals/samples/sample-task2-hollow-essay.txt",
+        "evals/samples/sample-task2-hollow-prompt.txt"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "帮我批改这篇雅思大作文，题目是：Some people think that all university students should study whatever they like. Others believe that they should only be allowed to study subjects that will be useful in the future, such as those related to science and technology. Discuss both views and give your own opinion. [作文见 sample-task2-offtopic-essay.txt]",
+      "expected_output": "必须识别为跑题（TR-OFF）：作文语言零错误（GRA 8.0 左右）、论证充分（支撑度无告警），但全文从未提及 students / allowed / whatever they like / useful —— 它论证的是「理工科 vs 人文学科哪个更值得拨款」，而题目问的是「学生应否自由选择专业」。TR 应压到 5.0 左右并明确标注这是 4.5–5.0 争议区间；必须指出跑题无法从作文本身看出，只有比对题干才能发现；总分会因语言强而虚高到 7.0，报告需说明其中 TR 是唯一瓶颈",
+      "files": [
+        "evals/samples/sample-task2-offtopic-essay.txt",
+        "evals/samples/sample-task2-offtopic-prompt.txt"
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "把这三篇的批改合成一份总结，我想知道这三种问题分别该怎么查、先修哪个。",
+      "expected_output": "输出一份系列总结：三种失败模式（语法错误密集/论证空洞/跑题）的诊断信号与阈值；三轴模型（相关轴/支撑轴/错误轴）及各自决定哪一项的上限；自诊断流程（先查跑题再查空洞最后查语法）；修复成本排序；跨档算术（按公式 4×(总分+0.25)−总和 算出增量，取值为 0.5/1.0/1.5/2.0 之一，不得当成固定的 +1.5）；五种用户误区。核心结论：TR 与语言质量反向，总分最高的一篇 TR 最低，应先修最便宜的问题",
+      "files": [
+        "evals/samples/sample-task2-essay.txt",
+        "evals/samples/sample-task2-prompt.txt",
+        "evals/samples/sample-task2-hollow-essay.txt",
+        "evals/samples/sample-task2-hollow-prompt.txt",
+        "evals/samples/sample-task2-offtopic-essay.txt",
+        "evals/samples/sample-task2-offtopic-prompt.txt"
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "我攒了好几篇批改报告了，帮我看看有没有进步，下一步该重点练什么。",
+      "expected_output": "运行 track_progress.py 聚合历史报告：给出分项趋势（同任务类型）、当前最弱项与跨档算术（按公式算出的四项总和距下一档的增量（0.5/1.0/1.5/2.0 之一），以及若只靠某项需提到多少分）、错误代码跨篇累计、以及持续性问题（≥2 篇重复出现的代码=系统性弱点）。建议必须以持续性问题为准。若报告同日则拒绝计算趋势、改报分布区间",
+      "files": []
+    },
+    {
+      "id": 11,
+      "prompt": "能不能给我一份带批注的 Word 文件？我想在原文上直接看到哪里错了，也想打印出来给老师看。",
+      "expected_output": "用 report_to_docx.py 从已有报告生成 .docx，不重新批改：错误清单变成锚定在原文词句上的真实 Word 批注，句子升级的改写作为斜体段落插在对应段落后，另附评分页。逐字定位失败的批注必须列为「未锚定」而不是挂到别的句子上；同一处原文被多行引用时合并为一条批注。生成后校验通过才交付",
+      "files": [
+        "ielts-reports/2026-09-13-task2.md",
+        "evals/samples/sample-task2-essay.txt"
+      ]
+    },
+    {
+      "id": 12,
+      "prompt": "Task 1 Academic，描述这张关于自有住房和租房比例变化的图表，帮我批改一下。[作文见 sample-task1-chart-essay.txt]",
+      "expected_output": "必须走 Task 1 专项检查而不是 Task 2 的论证支撑度：检测到没有 overview（TA 上限 5.0）、含数据句子 100% 是纯报数无比较、图表为过去时间段却混用现在时（4 句）。不得把 percentage/% 当成「证据标记」而判定论证充分，也不得因「无举例、无因果」报警——这两项在 Task 1 里本来就是 0 且正确",
+      "files": [
+        "evals/samples/sample-task1-chart-essay.txt",
+        "evals/samples/sample-task1-chart-prompt.txt"
+      ]
+    },
+    {
+      "id": 13,
+      "prompt": "批注能不能短一点？我想像老师批作业那样，扫一眼页边就知道哪类问题最多。",
+      "expected_output": "Word 批注改用页边标签：首行短英文标签＋中文名（如 Articles · 冠词），第二行 → 修改，理由小字殿后；评分页附标签统计表按批注数排序。标签映射取自 ielts_codes.py，不自造。标签表须标注统计口径（已锚定批注数）以免与报告的按代码统计混淆",
+      "files": []
+    },
+    {
+      "id": 14,
+      "prompt": "Task 1 General Training，投诉信，帮我批改。[书信见 selfcheck 的 GT_LETTER 同款：有称呼、无结尾敬语、含 Cheers]",
+      "expected_output": "必须按子类型分支：书信不检查 overview（书信没有这个要求），只检查称呼、结尾敬语、称呼与敬语是否匹配、语域。不得输出「没有找到概述 → TA 上限 5.0」。须提示三个 bullet 覆盖需人工对照题干确认",
+      "files": []
+    },
+    {
+      "id": 15,
+      "prompt": "报告我习惯用英文写，可以用吗？另外我的作文里有 emoji，会不会出问题？",
+      "expected_output": "两者都必须可用：英文报告的小节名（Score Card / Error List / Sentence Upgrades）与字段标签（Original / Rewrite）都要能解析，不得只解析一半；若报告提到错误代码却解析出 0 条错误行，必须明确失败而不是交付零批注的文档。作文中的 emoji 与全角标点必须原样保留（增补平面 U+10000–U+10FFFF 是合法 XML）",
+      "files": []
+    },
+    {
+      "id": 16,
+      "prompt": "我四项是 6.0 / 6.0 / 6.0 / 6.0，想上 6.5，需要提多少？",
+      "expected_answer_note": "总和 24.0 = 4×6.0，按公式增量 = 4×(6.0+0.25) − 24.0 = 1.0",
+      "expected_output": "必须按公式算而不是套用固定数字：总和 24.0、总分 6.0，增量 = 4×(6.0+0.25)−24.0 = **+1.0**（不是 +1.5）。因此单项提升 1.0 即可跨档。若答成「需要总和 +1.5」即为错误——那只是四种取值之一",
+      "files": []
+    },
+    {
+      "id": 17,
+      "prompt": "这篇批改报告能直接用吗？帮我检查一下有没有问题。",
+      "expected_output": "用 audit_report.py 审计报告：检查是否有同一处缺陷被两个以上评分项重复用作扣分依据。未在「缺陷归属审计」小节声明归属的引文即为违规并返回非 0。须同时报告审计覆盖率——若报告的扣分证据以表格或短引文为主（成句引用为 0），要明确说明本次未能覆盖、结论不构成通过，不得只报「通过」",
+      "files": []
+    },
+    {
+      "id": 18,
+      "prompt": "我生成 Word 的时候报 BUILD FAILED: 0 of 23 quoted fragments were found in the essay，怎么办？",
+      "expected_output": "解释这是「作文与报告不是同一篇」的防护，而非工具故障：报告里的引文在传入的作文中一条都找不到，通常是文件配对错了，或作文在批改后被改过。要求用户核对两个文件是否配对，并明确提醒不要换一篇作文去凑。可指向 USAGE.md 的故障排查表",
+      "files": []
+    },
+    {
+      "id": 19,
+      "prompt": "我准备把这个 skill 发到 GitHub，直接上传 zip 包行吗？",
+      "expected_output": "指出 zip 是构建产物不是真源，只发 zip 会失去历史/diff/issue/PR，且 npx skills add 这类安装器只认 git 仓库。应建议：仓库为真源 + zip 挂 Release 附件。并提醒发布前必改三项（LICENSE 占位符、版本号四处同步、文档里的 zip 文件名），以及 zip 包不可字节复现因而校验和须取自实际发布的那个包。可指向 RELEASING.md",
+      "files": []
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+# 打包与缓存产物
+__pycache__/
+*.pyc
+*.pyo
+
+# 编辑器与系统
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# 用户产物：报告、批改稿、趋势文件都不该进版本库
+ielts-reports/
+ielts-reviewed/
+*.docx
+*.doc
+!examples/*.docx
+
+# 临时文件
+*.tmp
+*.bak
+/tmp/
