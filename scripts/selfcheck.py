@@ -25,6 +25,7 @@ REQUIRED_FILES = [
     "README.md",
     "USAGE.md",
     "LICENSE",
+    "NOTICE.md",
     ".gitignore",
     "examples/README.md",
     "examples/report-task2.md",
@@ -937,10 +938,23 @@ def main():
 
     licence = open(os.path.join(ROOT, "LICENSE"), encoding="utf-8").read()
     check("MIT License" in licence, "LICENSE carries the MIT text")
-    if "<你的名字或组织>" in licence:
-        # Not a failure: a local install does not need a filled-in copyright line.
-        # It only blocks publishing, which the release checklist calls out.
-        print("  --   LICENSE still has the copyright placeholder; fill it in before publishing")
+    # GitHub reports NOASSERTION when a recognised license text carries added
+    # sections, and license scanners then fail to classify the project. Keeping
+    # LICENSE to the bare text is the invariant, so assert it rather than trust it.
+    stray = [line for line in licence.splitlines() if line.startswith("#")]
+    check(not stray,
+          "LICENSE holds no added sections, so scanners can classify it (%s)"
+          % (stray[:2] or "clean"))
+    check(len(licence.splitlines()) <= 25,
+          "LICENSE is the bare MIT text (%d lines)" % len(licence.splitlines()))
+
+    notice_path = os.path.join(ROOT, "NOTICE.md")
+    if os.path.isfile(notice_path):
+        notice = open(notice_path, encoding="utf-8").read()
+        check("MIT" in notice, "NOTICE.md restates the license")
+        check("ChanglinY" in notice and "AaronL725" in notice,
+              "NOTICE.md carries the third-party acknowledgements")
+        check("IELTS" in notice, "NOTICE.md carries the trademark disclaimer")
 
     print("\n[14] every relative Markdown link resolves")
     dangling = []

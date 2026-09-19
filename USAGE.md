@@ -1,6 +1,6 @@
 # 使用说明
 
-> `ielts-writing-coach` v1.12.0 ｜ 面向使用者，不假设你懂代码或看过源码。
+> `ielts-writing-coach` v1.12.1 ｜ 面向使用者，不假设你懂代码或看过源码。
 > 想了解设计原理与竞品对比，看 `README.md`；想改这个 skill，看 `SKILL.md`；
 > **想发布给别人用，看 `RELEASING.md`（发布清单）。**
 
@@ -335,7 +335,7 @@ skill 的发现规则：扫描根目录**下一层**的 `<name>/SKILL.md`。
 | DSH 用户级 | `~/.dsh/skills/ielts-writing-coach/` |
 
 ```bash
-unzip ielts-writing-coach-skill-v1.12.0.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-v1.12.1.zip -d ~/.agents/skills/
 ```
 
 **装好后无需重启**——运行中的 harness 会监视 skill 根目录，新增或修改会在下一个模型步骤自动进入目录。
@@ -346,7 +346,7 @@ unzip ielts-writing-coach-skill-v1.12.0.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **161 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、文档声明一致性）。末尾会报出通过数。
+会跑 **167 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 
@@ -367,7 +367,8 @@ ielts-writing-coach/
 ├── README.md                     # 项目说明：设计要点、竞品对比、版本记录
 ├── USAGE.md                      # 本文件
 ├── RELEASING.md                  # 发布到 GitHub / skill 市场前要做什么
-├── LICENSE                       # MIT（发布前需替换版权占位符）
+├── LICENSE                       # 标准 MIT 正文
+├── NOTICE.md                     # 许可说明、第三方致谢、IELTS 商标声明
 ├── examples/                     # 现成的产物示例：批改报告 + 带批注的 docx
 ├── references/                   # 判断规则（模型的参考手册）
 │   ├── scoring-protocol.md       #   打分流程、防虚高校准、跨档算术、缺陷归属

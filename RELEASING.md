@@ -33,7 +33,7 @@ zip 是**构建产物，不是真源**。只有 zip 会导致：
 
 | # | 项 | 在哪 | 为什么 |
 |---|---|---|---|
-| 1 | **LICENSE 里的 `<你的名字或组织>`** | `LICENSE` 第 3 行 | 占位符未替换，使用者无法确定授权主体。`selfcheck.py` 会提示这一条 |
+| 1 | **`LICENSE` 的版权署名** | `LICENSE` 第 3 行 | 已填 `xieyingfei`（取自 git 配置），要改真实姓名/组织名就改这一行。**注意：不要把说明文字加进 `LICENSE`**——加了 GitHub 会报 `NOASSERTION`，许可证扫描器也识别不了；说明放在 `NOTICE.md` |
 | 2 | **版本号** | `SKILL.md` frontmatter 的 `metadata.version` | **唯一真源**。改这里之后必须同步 README 最新条目、`USAGE.md`、`evals/evals.json`——`selfcheck.py` 会校验四处一致，不同步就直接失败 |
 | 3 | **zip 文件名** | `USAGE.md` 里的解压示例 | 文档里的文件名与实际包名必须一致 |
 
@@ -65,7 +65,7 @@ cd ielts-writing-coach
 git init -b main
 git add -A
 git status          # 确认没有 __pycache__ / .DS_Store / 个人报告被带进去
-git commit -m "ielts-writing-coach v1.12.0"
+git commit -m "ielts-writing-coach v1.12.1"
 git remote add origin git@github.com:<你>/<仓库名>.git
 git push -u origin main
 ```
@@ -85,7 +85,7 @@ git push -u origin main
 ### 2.2 打 tag 并挂 Release
 
 ```bash
-git tag -a v1.12.0 -m "v1.12.0"
+git tag -a v1.12.1 -m "v1.12.1"
 git push origin main --tags
 ```
 
@@ -145,7 +145,7 @@ AI agent skill：雅思作文批改。四项评分 + 逐句证据 + Word 真批�
 ## 5. 可以直接复制的发布说明
 
 ```markdown
-## ielts-writing-coach v1.12.0
+## ielts-writing-coach v1.12.1
 
 AI agent skill：雅思写作 Task 1 / Task 2 批改。零依赖（Python 标准库）、离线、可复核。
 
@@ -175,7 +175,7 @@ MIT License ｜ 150 项自检 ｜ 18 个评测用例
 直接把 zip 发过去即可，**装完无需重启**——运行中的 harness 会监视 skill 根目录。对方三步：
 
 ```bash
-unzip ielts-writing-coach-skill-v1.12.0.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-v1.12.1.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 # 然后说：帮我批改这篇雅思作文
 ```
