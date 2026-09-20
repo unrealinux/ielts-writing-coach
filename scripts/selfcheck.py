@@ -12,6 +12,7 @@ sample essay. Exits non-zero on the first failure.
 Standard library only. Python 3.8+.
 """
 
+import ast
 import os
 import re
 import subprocess
@@ -23,10 +24,12 @@ ROOT = os.path.dirname(HERE)
 REQUIRED_FILES = [
     "SKILL.md",
     "README.md",
+    "README.en.md",
     "USAGE.md",
     "LICENSE",
     "NOTICE.md",
     ".gitignore",
+    ".github/workflows/selfcheck.yml",
     "examples/README.md",
     "examples/report-task2.md",
     "examples/reviewed-task2.docx",
@@ -43,6 +46,7 @@ REQUIRED_FILES = [
     "scripts/track_progress.py",
     "scripts/report_to_docx.py",
     "scripts/ielts_codes.py",
+    "scripts/check_stdlib_only.py",
     "evals/evals.json",
     "evals/samples/sample-task2-essay.txt",
     "evals/samples/sample-task2-prompt.txt",
@@ -935,6 +939,13 @@ def main():
         check(evals_version == version,
               "evals.json version matches the frontmatter (%s vs %s)"
               % (evals_version, version))
+        # A translated README rots against the original the moment either side is
+        # bumped, so its version statement is pinned to the same source of truth.
+        english = open(os.path.join(ROOT, "README.en.md"), encoding="utf-8").read()
+        english_version = re.search(r"\*\*Version\s+(\d+\.\d+\.\d+)\*\*", english)
+        check(english_version is not None and english_version.group(1) == version,
+              "README.en.md states the current version (%s vs %s)"
+              % (english_version.group(1) if english_version else "none", version))
 
     licence = open(os.path.join(ROOT, "LICENSE"), encoding="utf-8").read()
     check("MIT License" in licence, "LICENSE carries the MIT text")
@@ -976,29 +987,102 @@ def main():
     check(not dangling,
           "no dangling relative link (%s)" % ("; ".join(sorted(set(dangling))[:3]) or "all resolve"))
 
-    print("\n[15] documentation claims")
+    print("\n[15] the CI workflow promises what the bundle documents")
+    # CI is a claim like any other: a matrix that starts above the documented
+    # minimum silently drops the promise, one that starts below it claims
+    # support the code was never tested against, and a renamed script turns the
+    # job green while it checks nothing. Every branch below runs on every
+    # bundle so this section always contributes the same number of checks --
+    # the count is itself asserted at the end, so a conditional check here
+    # would report a false mismatch instead of the real defect.
+    workflow_file = os.path.join(ROOT, ".github", "workflows", "selfcheck.yml")
+    workflow = ""
+    if os.path.isfile(workflow_file):
+        with open(workflow_file, encoding="utf-8") as handle:
+            workflow = handle.read()
+    check(bool(workflow), "the self-check workflow shipped")
+
+    requires = re.search(r'requires:\s*"Python (\d+\.\d+)\+', front)
+    promised = requires.group(1) if requires else ""
+    matrix = re.search(r"python-version:\s*\[([^\]]*)\]", workflow)
+    versions = re.findall(r"['\"](\d+\.\d+)['\"]", matrix.group(1)) if matrix else []
+    check(bool(promised) and versions[:1] == [promised],
+          "the matrix starts at the version SKILL.md promises (%s vs %s)"
+          % (versions[:1] or ["none"], promised or "not stated"))
+    check(len(versions) >= 5,
+          "the matrix spans the supported range (%d interpreter(s))" % len(versions))
+    check("scripts/selfcheck.py" in workflow,
+          "CI runs the bundle self-check, not a narrower substitute")
+    # The same guard CI runs, run here: "stdlib only" is the bundle's headline
+    # promise, and a promise that is only checked on someone else's machine is
+    # one you cannot verify before publishing.
+    guard = subprocess.run([sys.executable,
+                            os.path.join(ROOT, "scripts", "check_stdlib_only.py")],
+                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    guard_tail = guard.stdout.decode("utf-8", "replace").strip().splitlines()
+    check(guard.returncode == 0 and "scripts/check_stdlib_only.py" in workflow,
+          "the stdlib-only guard passes here and is the one CI runs (%s)"
+          % (guard_tail[-1] if guard_tail else "no output"))
+    named = set(re.findall(r"(?<![\w./-])[\w./-]*scripts/[\w./-]+\.py", workflow))
+    missing = sorted(p for p in named if not os.path.exists(os.path.join(ROOT, p)))
+    check(not missing,
+          "every path CI names exists, so a rename cannot leave it vacuously green (%s)"
+          % (missing[:3] or "all resolve"))
+    # The workflow runs on pull requests from forks; a token wider than read is
+    # then a real risk rather than a formality.
+    check("permissions:" in workflow and "contents: read" in workflow,
+          "CI asks for read-only repository access")
+
+    # The 3.8 CI job is the real test of the version promise, but it only runs
+    # after a push. Parsing every script against 3.8 grammar catches syntax that
+    # needs a newer interpreter -- a `match` statement, a parenthesized context
+    # manager -- before the push. It does not catch API-level additions
+    # (`str.removeprefix` is 3.9), so this is a fast pre-filter rather than the
+    # guarantee; the wording says so, because a check that overstates its own
+    # coverage is how a bundle ends up claiming support it never tested.
+    syntax_bad = []
+    scripts_dir = os.path.join(ROOT, "scripts")
+    if os.path.isdir(scripts_dir):
+        for name in sorted(os.listdir(scripts_dir)):
+            if not name.endswith(".py"):
+                continue
+            with open(os.path.join(scripts_dir, name), encoding="utf-8") as handle:
+                source = handle.read()
+            try:
+                ast.parse(source, filename=name, feature_version=(3, 8))
+            except SyntaxError as exc:
+                syntax_bad.append("%s:%s %s" % (name, exc.lineno, exc.msg))
+    check(not syntax_bad,
+          "no script uses syntax newer than Python 3.8 (%s; API-level additions "
+          "are the 3.8 CI job's business, not this check's)"
+          % ("; ".join(syntax_bad[:2]) or "all parse under 3.8 grammar"))
+
+    print("\n[16] documentation claims")
     # A coverage number written in prose rots the moment a check is added; this
     # bundle got it wrong three times. Declaring it is only safe when something
-    # verifies it, so the README's number is compared against the real total.
-    readme_path = os.path.join(ROOT, "README.md")
-    declared = None
-    if os.path.isfile(readme_path):
+    # verifies it, so every README's number is compared against the real total.
+    # All READMEs are folded into one check so that this last section keeps
+    # contributing exactly one check -- see the note in [15].
+    total = len(checks_run) + 1  # this check is the last one
+    problems = []
+    for readme_name in ("README.md", "README.en.md"):
+        readme_path = os.path.join(ROOT, readme_name)
+        if not os.path.isfile(readme_path):
+            continue
         with open(readme_path, encoding="utf-8") as handle:
-            match = re.search(r"自检 \*\*(\d+)\*\* 项", handle.read())
-        declared = int(match.group(1)) if match else None
-    if declared is None:
-        print("  --   README declares no self-check count; skipping the consistency check")
-    else:
-        total = len(checks_run) + 1  # this check is the last one
-        if declared != total:
-            # This check is itself counted, so a failing run reports one fewer
-            # passing check than the total. The declared number must be the
-            # TOTAL, not the passing count -- say so, or the next person will
-            # chase the off-by-one.
-            print("  --   set the README count to %d (the total, not the passing count); "
-                  "currently %d" % (total, declared))
-        check(declared == total,
-              "README's declared count matches the real total (%d vs %d)" % (declared, total))
+            body = handle.read()
+        numbers = set()
+        for pattern in (r"自检 \*\*(\d+)\*\* 项", r"(\d+)\s+(?:self-)?checks?\b"):
+            for match in re.finditer(pattern, body):
+                numbers.add(int(match.group(1)))
+        if not numbers:
+            problems.append("%s declares no count" % readme_name)
+        elif numbers != {total}:
+            problems.append("%s says %s" % (readme_name, "/".join(str(n) for n in sorted(numbers))))
+    check(not problems,
+          "every README's declared count matches the real total "
+          "(total must be %d -- the TOTAL, not the passing count; %s)"
+          % (total, "; ".join(problems) or "all agree"))
 
     print("")
     if failures:

@@ -22,6 +22,7 @@
 ielts-writing-coach/
 ├── SKILL.md                          # 主流程（agent 加载的入口）
 ├── README.md                         # 本文件（设计与版本）
+├── README.en.md                      # English README（安装/用法/产物/边界）
 ├── USAGE.md                          # 面向使用者的完整说明
 ├── RELEASING.md                      # 发布前必改项与各平台要求
 ├── LICENSE                           # 标准 MIT 正文
@@ -43,9 +44,11 @@ ielts-writing-coach/
 │   ├── report_to_docx.py             # 从报告生成带真实 Word 批注的 .docx（零依赖 OOXML）
 │   ├── ielts_codes.py                # 共享的代码表：代码 ↔ 页边标签 ↔ 中文名
 │   ├── audit_report.py               # 报告审计：同一处缺陷是否被多个评分项重复扣分
+│   ├── check_stdlib_only.py          # 断言所有脚本只用标准库（CI 与自检跑同一份）
 │   └── selfcheck.py                  # 校验 bundle 完整性（解压/克隆后跑一次）
+├── .github/workflows/selfcheck.yml   # CI：Python 3.8–3.13 矩阵 + 标准库守卫
 └── evals/
-    ├── evals.json                    # 6 个评测用例
+    ├── evals.json                    # 19 个评测用例
     └── samples/                      # 示例题目与作文
 ```
 
@@ -163,15 +166,21 @@ python3 scripts/track_progress.py ~/ielts-reports --out ~/ielts-reports/_趋势.
 
 ## 验证
 
-两套验证，都能独立复现：
+三套验证，都能独立复现：
 
 ```bash
-python3 scripts/selfcheck.py        # 自检 **167** 项：格式、解析、聚合、docx 结构与幂等性
-textutil -info out.docx             # macOS 独立 OOXML 实现能否读取（可选）
+python3 scripts/selfcheck.py              # 自检 **179** 项：格式、解析、聚合、docx 结构与幂等性
+                                          # 内含 CI 承诺一致性（矩阵起点 = 声明的 3.8+、脚本路径存在）
+python3 scripts/check_stdlib_only.py      # 断言所有脚本只 import 标准库
+textutil -info out.docx                   # macOS 独立 OOXML 实现能否读取（可选）
 ```
 
+CI（[`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml)）在 Python **3.8–3.13** 六个解释器上跑上面这些——
+3.8/3.9 没有 `sys.stdlib_module_names`，所以矩阵同时也是那条标准库守卫两个分支的覆盖来源。
+渲染（docx 画不画得出东西）**不在 CI 里**，原因与手动命令见 `RELEASING.md` §2.5。
+
 自检**会校验上面这个数字**——如果加了检查却没更新它，自检会失败。文档里的声明必须被机器验证，
-否则它一定会过时（这个数字此前连续写错三次）。
+否则它一定会过时（这个数字此前连续写错三次）。中英两份 README 的数字都会被校验。
 
 ## 设计要点
 
@@ -186,10 +195,14 @@ textutil -info out.docx             # macOS 独立 OOXML 实现能否读取（�
 ## 分享给别人
 
 ```bash
-# 打包（不含 .git 和 __pycache__）
-cd .agents/skills && zip -r ../../ielts-writing-coach-skill-v1.0.0.zip ielts-writing-coach \
-  -x '*/__pycache__/*' -x '*/.git/*' -x '*/.DS_Store'
+# 在仓库里对着 tag 打包：内容 = git ls-files，同一 commit 两次打包字节完全相同
+git archive --format=zip --prefix=ielts-writing-coach/ \
+  -o ../../ielts-writing-coach-skill-vX.Y.Z.zip vX.Y.Z
 ```
+
+用 `git archive` 而不是 `zip -r`，是因为它**可复现**（时间戳取自 commit，不是「打包那一刻」），
+所以发布说明里的 sha256 别人能自己核对；同时它天然只含仓库跟踪的文件，
+不需要维护 `-x` 排除清单——那种清单漏写一项就是把个人批改报告打进公开包。
 
 对方解压到上表任一位置即可使用。整包自包含，无外部依赖，无网络请求。
 
@@ -202,6 +215,7 @@ cd .agents/skills && zip -r ../../ielts-writing-coach-skill-v1.0.0.zip ielts-wri
 
 ## 版本
 
+- **1.13.0** — 补齐三处**「只有别人接手时才会暴露」**的缺口，并把它们变成机制：① 新增 **[`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml)**——此前「支持 Python 3.8+、只用标准库」只是文档里的一句话，没有任何东西约束它；现在矩阵跑 3.8–3.13 六个解释器，另加一道 `ast` 导入守卫，任何脚本引入第三方模块即失败（这正是「用户没网就装不上」的根因，靠人肉复查一定会漏）。② 新增 **[`README.en.md`](README.en.md)**——仓库是公开的，英文读者此前只能读中文 README；英文版只讲安装、用法、产物与边界，不复述设计史。③ 自检新增两节：**[15] CI 承诺与文档是否一致**（矩阵起点必须等于 `SKILL.md` 声明的 `Python 3.8+`、矩阵跨度、CI 实际调用的每个脚本路径必须存在——否则重命名脚本会让流水线**空跑还全绿**）、**[16] 文档声明一致性扩展到中英两份 README**（原先只校验中文版，英文版里的两个数字会立刻漂移）。同时把 `RELEASING.md` / `README.md` 里写死的版本号换成 `vX.Y.Z` 占位符、删掉「150 项自检」这类一定会腐烂的营销数字，并新增 `RELEASING.md` §2.5 记录 **docx 渲染验证**的手动命令与它的两处诚实限制（`qlmanage` 不进 CI 的原因、Word 批注侧栏仍未验证）。④ 写完之后**反向测试**这道新守卫，发现它本身就是错的：它把 `sys.stdlib_module_names`（**3.10 才有**）当成完整名单，在 3.8/3.9 上退化成空集，于是 `import os` 也被判成第三方依赖——**六个 job 里有两个永远红**。修法是抽成 `scripts/check_stdlib_only.py`，改用与版本无关的枚举（并覆盖 `lib-dynload`：3.9 上 `math`/`hashlib`/`unicodedata` 都是扩展模块，只枚举 stdlib 顶层目录仍会误报 39 处），CI 与自检跑**同一份代码**，两个分支分别由 3.8/3.9 与 3.10+ 的 job 覆盖。⑤ 再加一条**本地 3.8 文法预检**（`ast.parse(feature_version=(3, 8))` 解析全部脚本）：CI 的 3.8 job 才是真正的验证，但它推送之后才跑，这条把「推上去才发现红」提前到本地；它的措辞里**写明自己查不了 API 层面的新增**（`str.removeprefix` 是 3.9），免得被读成「已保证 3.8 兼容」——一条夸大了自己覆盖范围的检查，正是这个 bundle 反复栽跟头的地方。⑥ **换掉打包方式：发布包改用 `git archive` 而不是 `zip -r`。** 原因是 §2.3 那条「zip 不可字节复现，所以 Release 里的 sha256 只能信发布者」的限制终于可以消掉了——`git archive` 把每个条目的时间戳写成 **commit 时间**，实测同一 commit 打两次字节完全相同，于是校验和**别人能自己复核**；同时它的内容恒等于 `git ls-files`，不再依赖 `-x` 排除清单（那种清单漏写一项就是把个人批改报告打进公开包）。代价是未提交的改动不进包——这反而是好事，它挡住了发半成品。自检 179 项。
 - **1.12.1** — 修正一处**已发布产物的实际缺陷**：GitHub 把本仓库的许可证显示为 `NOASSERTION` 而非 `MIT License`。原因是 `LICENSE` 在标准 MIT 正文后附了 26 行中文说明，而许可证识别器要求正文不被实质性添加——后果是仓库页面不显示 MIT 徽章、许可证扫描器与 SBOM 工具识别不到、按 `license:mit` 搜索也找不到。修法：`LICENSE` 精简为纯正文，说明与第三方致谢移入新增的 `NOTICE.md`；自检新增「LICENSE 必须保持纯净」断言（无 Markdown 标题、行数上限），并校验 `NOTICE.md` 的许可声明、第三方致谢与 IELTS 商标声明。版本号四处同步至 1.12.1。
 - **1.12.0** — 补发布所需的元数据与文档，让"能不能直接发 zip"有确定答案：① 新增 `LICENSE`（MIT，含版权占位符与第三方思路致谢）与 `.gitignore`（排除个人报告与缓存产物，保留 examples）；② **版本号收归 `SKILL.md` frontmatter 的 `metadata.version` 作为唯一真源**——此前散在 4 处、没有任何校验，而这是我已经踩过四次的漂移类问题，现由自检强制四处一致；③ 新增 `examples/`（现成的批改报告 + 带 22 条批注的 docx），让人不装就能看到产物；④ 新增 **[`RELEASING.md`](RELEASING.md)**：三种发布目标分别要什么、发布前必改 3 项、GitHub 与 skill 市场的具体步骤、以及 **zip 包不可字节复现**这一限制对发布校验和的影响。自检新增版本一致性与 LICENSE 校验。
 - **1.11.0** — 新增 **[`USAGE.md`](USAGE.md)**：面向使用者的完整文档（三十秒上手、需要准备什么、三种调用方式、完整流程与产物位置、**怎么读报告的各小节**、docx 与进度追踪的用法、**五个脚本的参数表**、`--task` 任务类型对照、**故障排查**（每一条已知报错的含义与处理）、10 条常见问题、以及诚实的边界清单）。文档里的六条示例命令已逐条实跑验证。同时把文档注册进自检（新增文件完整性检查），自检 167 项。

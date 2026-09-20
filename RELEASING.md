@@ -43,7 +43,7 @@ zip 是**构建产物，不是真源**。只有 zip 会导致：
 python3 scripts/selfcheck.py
 ```
 
-**全绿才能发。** 它会校验文件完整性、解析逻辑、docx 结构与幂等性、版本四处一致、文档声明的自检项数——任何一项不同步都会失败。
+**全绿才能发。** 它会校验文件完整性、解析逻辑、docx 结构与幂等性、版本五处一致、CI 承诺与文档一致、文档声明的自检项数——任何一项不同步都会失败。
 
 ---
 
@@ -51,7 +51,7 @@ python3 scripts/selfcheck.py
 
 ### 2.1 初始化仓库
 
-> ✅ **本地仓库已经初始化并完成首次提交**（分支 `main`，32 个文件，无缓存与个人产物）。
+> ✅ **本地仓库已经初始化并完成首次提交**（分支 `main`，36 个文件，无缓存与个人产物）。
 > 你只需要**添加远程仓库并推送**，下面的 `git init` 与首次 commit 可跳过。
 
 <details>
@@ -65,7 +65,7 @@ cd ielts-writing-coach
 git init -b main
 git add -A
 git status          # 确认没有 __pycache__ / .DS_Store / 个人报告被带进去
-git commit -m "ielts-writing-coach v1.12.1"
+git commit -m "ielts-writing-coach vX.Y.Z"
 git remote add origin git@github.com:<你>/<仓库名>.git
 git push -u origin main
 ```
@@ -85,27 +85,58 @@ git push -u origin main
 ### 2.2 打 tag 并挂 Release
 
 ```bash
-git tag -a v1.12.1 -m "v1.12.1"
+git tag -a vX.Y.Z -m "vX.Y.Z"
 git push origin main --tags
 ```
 
 然后到 GitHub Release 页面上传 zip 作为附件。
 
-### 2.3 关于 zip 的校验和（一个诚实的限制）
+### 2.3 打包与校验和
 
-**zip 包不是字节可复现的**——`zip` 会记录文件修改时间，同样内容重新打包会得到不同的字节。
-所以：
+**用 `git archive` 打包，不要用 `zip -r`。**
 
-- 如果你在 Release 说明里写 sha256，**必须是"你实际发布的那个包"的**，不能事后重打一个去核对
-- 想要可复现的包，需要固定时间戳（`SOURCE_DATE_EPOCH` 或 `zip` 的 `-X` + 统一 mtime），当前未实现
-- **`examples/` 里的 docx 是可复现的**（生成器固定了时间戳），那个 sha256 可以公开核对
+```bash
+git archive --format=zip --prefix=ielts-writing-coach/ \
+  -o ielts-writing-coach-skill-vX.Y.Z.zip vX.Y.Z
+shasum -a 256 ielts-writing-coach-skill-vX.Y.Z.zip
+```
+
+两个好处，都是实测过的：
+
+- **同一个 commit 打两次，字节完全相同。** `git archive` 把每个条目的时间戳写成 **commit 时间**，
+  而不是「打包那一刻」。所以 Release 说明里的 sha256 是**别人可以自己复核的**——`zip -r` 做不到这一点。
+- **内容恒等于 `git ls-files`。** 不会有 `.git`、`__pycache__`、`.DS_Store`、用户报告混进去，
+  也就不再依赖 `-x` 排除清单；那种清单漏写一项就是隐私事故。
+
+两点注意：
+
+- **换一个 commit 就会得到不同字节**（时间戳来自 commit）。所以校验和要对着 **tag** 打，并与 tag 一起公布。
+- 未提交的改动**不会**进包。`git status` 必须是干净的——这反而是好事，它挡住了「把半成品发出去」。
+
+> 历史：v1.12.1 及更早用 `zip -r`，那种包**不可复现**，Release 说明里的 sha256 只能靠发布者自己声明。
+> `examples/` 里的 docx 一直是可复现的（生成器固定了时间戳），它的 sha256 也可以公开核对。
 
 ### 2.4 仓库描述建议
 
 ```
 AI agent skill：雅思作文批改。四项评分 + 逐句证据 + Word 真批注 + 跨篇趋势。
-零依赖（Python 标准库）、离线、150 项自检。
+零依赖（Python 标准库）、离线、自带全量自检。
 ```
+
+### 2.5 交付物的渲染验证（手动，仅 macOS）
+
+自检能证明 docx 是一个**结构合法的 OOXML 包**，但证明不了它**画得出东西**——一个空的 `document.xml` 同样合法。
+能区分这两者的是 Apple 的排版引擎：
+
+```bash
+qlmanage -t -s 800 -o /tmp/ql examples/reviewed-task2.docx
+open /tmp/ql/reviewed-task2.docx.png
+```
+
+看图确认五件事：标题、题干、作文正文、斜体重写句、中文批注**都在**，并且**分页正确**。
+这一步**没有进 CI**：`qlmanage` 走 QuickLook，需要一个窗口服务器会话，CI runner 上不保证有；
+一个会挂起或随机失败的任务比没有这个任务更糟。同理，**Word 里的批注侧栏也验证不了**——
+它需要真的装 Word。这一点已写在 `USAGE.md` 的边界清单里，别在发布说明里暗示已验证。
 
 ---
 
@@ -127,25 +158,31 @@ AI agent skill：雅思作文批改。四项评分 + 逐句证据 + Word 真批�
 
 ---
 
-## 4. 发出去之前，最后确认这 6 件事
+## 4. 发出去之前，最后确认这 8 件事
 
 ```
 □ python3 scripts/selfcheck.py 全绿
 □ LICENSE 的占位符已替换
-□ SKILL.md / README / 使用说明 / evals.json 四处版本一致（selfcheck 已校验）
-□ git status 里没有个人报告、__pycache__、.DS_Store
-□ 版本号 tag 与 zip 文件名一致
+□ SKILL.md / README / README.en / 使用说明 / evals.json 五处版本一致（selfcheck 已校验）
+□ examples/reviewed-task2.docx 渲染一次，确认不是「结构合法但画不出东西」（见 2.5）
+□ git status 干净（`git archive` 只打已提交内容，脏工作区会静默少文件）
+□ 版本号 tag 与 zip 文件名一致，zip 由 `git archive` 打在 tag 上（见 2.3）
+□ 解压发布的那个包，在里面再跑一次 selfcheck
 □ 发布说明里写清：分数是预估不是官方评分；不读图表图片；阈值是少量样本校准的
 ```
 
-最后一条很重要——**把边界写在最显眼的地方，比让人踩坑后再解释便宜得多。**
+倒数第二条是**对产物本身**的验证，不是对工作区的验证：包可能在打包环节出错
+（少了文件、多带了一份报告），而工作区自检对此一无所知。
+`unzip -d /tmp/x <zip> && cd /tmp/x/ielts-writing-coach && python3 scripts/selfcheck.py`。
+
+最后一条最重要——**把边界写在最显眼的地方，比让人踩坑后再解释便宜得多。**
 
 ---
 
 ## 5. 可以直接复制的发布说明
 
 ```markdown
-## ielts-writing-coach v1.12.1
+## ielts-writing-coach vX.Y.Z
 
 AI agent skill：雅思写作 Task 1 / Task 2 批改。零依赖（Python 标准库）、离线、可复核。
 
@@ -165,7 +202,10 @@ AI agent skill：雅思写作 Task 1 / Task 2 批改。零依赖（Python 标准
 - 启发式探测会有误报漏报，报告中每处标注"需人工确认"
 - 阈值是少量样本校准的，用于触发复核而非下判定
 
-MIT License ｜ 150 项自检 ｜ 18 个评测用例
+MIT License ｜ 全量自检全绿 ｜ 评测用例见 `evals/evals.json`
+
+**校验和**（由 `git archive` 打在 tag 上，同一 tag 两次打包字节相同，可自行复核）
+<sha256>  ielts-writing-coach-skill-vX.Y.Z.zip
 ```
 
 ---
@@ -175,7 +215,7 @@ MIT License ｜ 150 项自检 ｜ 18 个评测用例
 直接把 zip 发过去即可，**装完无需重启**——运行中的 harness 会监视 skill 根目录。对方三步：
 
 ```bash
-unzip ielts-writing-coach-skill-v1.12.1.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-vX.Y.Z.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 # 然后说：帮我批改这篇雅思作文
 ```

@@ -4,10 +4,10 @@ description: "Use when the user wants an IELTS essay corrected, graded, scored, 
 whenToUse: "Load when the user submits an IELTS writing task, prompt, or essay and wants scoring, correction, feedback, or an improved version. Also load when the user asks for an IELTS writing practice plan, model answer, or a review of a previous correction."
 license: MIT
 metadata:
-  version: "1.12.1"
+  version: "1.13.0"
   license: MIT
   requires: "Python 3.8+ (standard library only)"
-  updated: "2026-09-16"
+  updated: "2026-09-20"
 ---
 
 # IELTS Writing Coach — 雅思作文批改

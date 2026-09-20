@@ -1,6 +1,6 @@
 # 使用说明
 
-> `ielts-writing-coach` v1.12.1 ｜ 面向使用者，不假设你懂代码或看过源码。
+> `ielts-writing-coach` v1.13.0 ｜ 面向使用者，不假设你懂代码或看过源码。
 > 想了解设计原理与竞品对比，看 `README.md`；想改这个 skill，看 `SKILL.md`；
 > **想发布给别人用，看 `RELEASING.md`（发布清单）。**
 
@@ -335,7 +335,7 @@ skill 的发现规则：扫描根目录**下一层**的 `<name>/SKILL.md`。
 | DSH 用户级 | `~/.dsh/skills/ielts-writing-coach/` |
 
 ```bash
-unzip ielts-writing-coach-skill-v1.12.1.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-vX.Y.Z.zip -d ~/.agents/skills/
 ```
 
 **装好后无需重启**——运行中的 harness 会监视 skill 根目录，新增或修改会在下一个模型步骤自动进入目录。
@@ -346,16 +346,19 @@ unzip ielts-writing-coach-skill-v1.12.1.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **167 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、文档声明一致性）。末尾会报出通过数。
+会跑 **179 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 
 ```bash
-cd <skill 所在目录>/.. && zip -r ielts-writing-coach.zip ielts-writing-coach \
-  -x '*/__pycache__/*' -x '*/.git/*' -x '*.DS_Store' -x '*.pyc'
+# 在 skill 仓库里打 tag 后打包（同一 commit 得到的字节完全相同，可对外公布校验和）
+cd <skill 仓库>
+git archive --format=zip --prefix=ielts-writing-coach/ -o ../ielts-writing-coach.zip vX.Y.Z
 ```
 
 对方解压到上表任一位置即可。**整包自包含，无外部依赖，无网络请求。**
+（`git archive` 打出的内容恒等于仓库跟踪的文件，不会把 `.git`、`__pycache__` 或你自己的批改报告带出去。
+如果只是想分享一份**未提交**的工作副本，那只能用 `zip -r`，并自己确认排除清单。）
 
 ---
 

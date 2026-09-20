@@ -1,0 +1,60 @@
+name: selfcheck
+
+# The bundle claims two things that only CI can actually hold it to: that it runs
+# on Python 3.8+ and that it depends on nothing outside the standard library.
+# The six-interpreter matrix tests the first; scripts/check_stdlib_only.py tests
+# the second -- and because the 3.8/3.9 jobs lack `sys.stdlib_module_names`
+# while 3.10+ has it, the matrix is also what exercises both branches of that
+# guard. Every path named below is asserted to exist by scripts/selfcheck.py,
+# so renaming a script cannot leave this file green while checking nothing.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selfcheck:
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12', '3.13']
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Report the interpreter
+        run: python -V
+
+      - name: Bundle self-check
+        run: python scripts/selfcheck.py
+
+      - name: Fail if anything outside the standard library is imported
+        # stdlib-only is the whole point of this bundle; catch a stray third-party
+        # import rather than discover it when a user has no network.
+        # The check lives in scripts/ so that selfcheck.py runs the very same
+        # code locally -- an inline copy here drifted once already: it treated
+        # `sys.stdlib_module_names` (3.10+) as complete and, on the 3.8/3.9
+        # jobs, reported `import os` as third-party, so two of six jobs could
+        # only ever fail. One implementation, two callers.
+        run: python scripts/check_stdlib_only.py
+
+# Rendering is verified by hand rather than here: the only renderer that can
+# tell "structurally valid but draws nothing" from a real document on a runner
+# is Apple's layout engine via qlmanage, and QuickLook needs a window server
+# session that CI runners do not reliably provide. A job that hangs or flakes
+# is worse than no job, so the command lives in RELEASING.md instead.
