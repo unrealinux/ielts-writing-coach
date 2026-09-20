@@ -24,6 +24,7 @@ ielts-writing-coach/
 ├── README.md                         # 本文件（设计与版本）
 ├── README.en.md                      # English README（安装/用法/产物/边界）
 ├── USAGE.md                          # 面向使用者的完整说明
+├── USAGE-EXAMPLE.md                  # 完整使用示例（一篇作文从贴进来到拿到两份产物）
 ├── RELEASING.md                      # 发布前必改项与各平台要求
 ├── LICENSE                           # 标准 MIT 正文
 ├── NOTICE.md                         # 许可说明与第三方致谢
@@ -169,7 +170,7 @@ python3 scripts/track_progress.py ~/ielts-reports --out ~/ielts-reports/_趋势.
 三套验证，都能独立复现：
 
 ```bash
-python3 scripts/selfcheck.py              # 自检 **179** 项：格式、解析、聚合、docx 结构与幂等性
+python3 scripts/selfcheck.py              # 自检 **189** 项：格式、解析、聚合、docx 结构与幂等性
                                           # 内含 CI 承诺一致性（矩阵起点 = 声明的 3.8+、脚本路径存在）
 python3 scripts/check_stdlib_only.py      # 断言所有脚本只 import 标准库
 textutil -info out.docx                   # macOS 独立 OOXML 实现能否读取（可选）
@@ -215,6 +216,7 @@ git archive --format=zip --prefix=ielts-writing-coach/ \
 
 ## 版本
 
+- **1.13.1** — 修三处**「工具给出错误判断」**的缺陷，全部是写 [`USAGE-EXAMPLE.md`](USAGE-EXAMPLE.md) 时拿真实输入验证出来的：① **`Dear Tom` 不被认作称呼**——正则只匹配 `Dear Sir/Madam/Mr/Mrs/Ms/Dr`，于是对一封完全合规的 GT 书信报告「❌ 书信缺少称呼」，而这是该任务里最常见的写法；② **`Dear Tom + Best wishes` 被判「称呼与敬语不匹配 ❌」**——规则只接受 `Yours sincerely`，把给朋友写信的标准结尾当成错误；③ **参数与题干矛盾时建议指向错的题型**——题干是 Task 2 却传了 `--task 1`，会建议「改用 `--task 1gt`」，等于把人送去第三个错误分支（建议改为**从题干识别出的题型**推导，五个方向逐一验证）。同时新增 [`USAGE-EXAMPLE.md`](USAGE-EXAMPLE.md)：一篇 Task 2 作文从贴进对话到拿到两份产物的完整走查，每一步都是真实输出。自检 179 → **189 项**，新增的 9 条断言覆盖了原先没人跑的两个方向。**①② 之所以一直没被发现，是自检里唯一的 GT fixture 恰好用的是 `Dear Sir or Madam`；③ 的旧断言只覆盖了「恰好正确」的那一侧——两处都是「测试覆盖了能过的那个，而不是会错的那个」。** 反向测试确认：退回旧实现，5 条新断言立刻变红。
 - **1.13.0** — 补齐三处**「只有别人接手时才会暴露」**的缺口，并把它们变成机制：① 新增 **[`.github/workflows/selfcheck.yml`](.github/workflows/selfcheck.yml)**——此前「支持 Python 3.8+、只用标准库」只是文档里的一句话，没有任何东西约束它；现在矩阵跑 3.8–3.13 六个解释器，另加一道 `ast` 导入守卫，任何脚本引入第三方模块即失败（这正是「用户没网就装不上」的根因，靠人肉复查一定会漏）。② 新增 **[`README.en.md`](README.en.md)**——仓库是公开的，英文读者此前只能读中文 README；英文版只讲安装、用法、产物与边界，不复述设计史。③ 自检新增两节：**[15] CI 承诺与文档是否一致**（矩阵起点必须等于 `SKILL.md` 声明的 `Python 3.8+`、矩阵跨度、CI 实际调用的每个脚本路径必须存在——否则重命名脚本会让流水线**空跑还全绿**）、**[16] 文档声明一致性扩展到中英两份 README**（原先只校验中文版，英文版里的两个数字会立刻漂移）。同时把 `RELEASING.md` / `README.md` 里写死的版本号换成 `vX.Y.Z` 占位符、删掉「150 项自检」这类一定会腐烂的营销数字，并新增 `RELEASING.md` §2.5 记录 **docx 渲染验证**的手动命令与它的两处诚实限制（`qlmanage` 不进 CI 的原因、Word 批注侧栏仍未验证）。④ 写完之后**反向测试**这道新守卫，发现它本身就是错的：它把 `sys.stdlib_module_names`（**3.10 才有**）当成完整名单，在 3.8/3.9 上退化成空集，于是 `import os` 也被判成第三方依赖——**六个 job 里有两个永远红**。修法是抽成 `scripts/check_stdlib_only.py`，改用与版本无关的枚举（并覆盖 `lib-dynload`：3.9 上 `math`/`hashlib`/`unicodedata` 都是扩展模块，只枚举 stdlib 顶层目录仍会误报 39 处），CI 与自检跑**同一份代码**，两个分支分别由 3.8/3.9 与 3.10+ 的 job 覆盖。⑤ 再加一条**本地 3.8 文法预检**（`ast.parse(feature_version=(3, 8))` 解析全部脚本）：CI 的 3.8 job 才是真正的验证，但它推送之后才跑，这条把「推上去才发现红」提前到本地；它的措辞里**写明自己查不了 API 层面的新增**（`str.removeprefix` 是 3.9），免得被读成「已保证 3.8 兼容」——一条夸大了自己覆盖范围的检查，正是这个 bundle 反复栽跟头的地方。⑥ **换掉打包方式：发布包改用 `git archive` 而不是 `zip -r`。** 原因是 §2.3 那条「zip 不可字节复现，所以 Release 里的 sha256 只能信发布者」的限制终于可以消掉了——`git archive` 把每个条目的时间戳写成 **commit 时间**，实测同一 commit 打两次字节完全相同，于是校验和**别人能自己复核**；同时它的内容恒等于 `git ls-files`，不再依赖 `-x` 排除清单（那种清单漏写一项就是把个人批改报告打进公开包）。代价是未提交的改动不进包——这反而是好事，它挡住了发半成品。自检 179 项。
 - **1.12.1** — 修正一处**已发布产物的实际缺陷**：GitHub 把本仓库的许可证显示为 `NOASSERTION` 而非 `MIT License`。原因是 `LICENSE` 在标准 MIT 正文后附了 26 行中文说明，而许可证识别器要求正文不被实质性添加——后果是仓库页面不显示 MIT 徽章、许可证扫描器与 SBOM 工具识别不到、按 `license:mit` 搜索也找不到。修法：`LICENSE` 精简为纯正文，说明与第三方致谢移入新增的 `NOTICE.md`；自检新增「LICENSE 必须保持纯净」断言（无 Markdown 标题、行数上限），并校验 `NOTICE.md` 的许可声明、第三方致谢与 IELTS 商标声明。版本号四处同步至 1.12.1。
 - **1.12.0** — 补发布所需的元数据与文档，让"能不能直接发 zip"有确定答案：① 新增 `LICENSE`（MIT，含版权占位符与第三方思路致谢）与 `.gitignore`（排除个人报告与缓存产物，保留 examples）；② **版本号收归 `SKILL.md` frontmatter 的 `metadata.version` 作为唯一真源**——此前散在 4 处、没有任何校验，而这是我已经踩过四次的漂移类问题，现由自检强制四处一致；③ 新增 `examples/`（现成的批改报告 + 带 22 条批注的 docx），让人不装就能看到产物；④ 新增 **[`RELEASING.md`](RELEASING.md)**：三种发布目标分别要什么、发布前必改 3 项、GitHub 与 skill 市场的具体步骤、以及 **zip 包不可字节复现**这一限制对发布校验和的影响。自检新增版本一致性与 LICENSE 校验。

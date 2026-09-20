@@ -1,6 +1,8 @@
 # 使用说明
 
-> `ielts-writing-coach` v1.13.0 ｜ 面向使用者，不假设你懂代码或看过源码。
+> `ielts-writing-coach` v1.13.1 ｜ 面向使用者，不假设你懂代码或看过源码。
+> **想看一遍完整的真实走查，直接读 [`USAGE-EXAMPLE.md`](USAGE-EXAMPLE.md)**——
+> 一篇作文从贴进对话到拿到报告与批改稿，每一步都有实际输出。
 > 想了解设计原理与竞品对比，看 `README.md`；想改这个 skill，看 `SKILL.md`；
 > **想发布给别人用，看 `RELEASING.md`（发布清单）。**
 
@@ -346,7 +348,7 @@ unzip ielts-writing-coach-skill-vX.Y.Z.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **179 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
+会跑 **189 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 

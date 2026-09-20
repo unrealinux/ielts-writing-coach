@@ -9,7 +9,7 @@ comments**.
 
 Zero dependencies (Python standard library only), offline, and byte-reproducible.
 
-**Version 1.13.0**
+**Version 1.13.1**
 
 ---
 
@@ -35,8 +35,8 @@ report.
 ## Install
 
 ```bash
-unzip ielts-writing-coach-skill-v1.13.0.zip -d ~/.agents/skills/
-python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 179 checks
+unzip ielts-writing-coach-skill-v1.13.1.zip -d ~/.agents/skills/
+python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 189 checks
 ```
 
 Or clone into the same place:
@@ -82,7 +82,7 @@ judge the output without running anything.
 
 | | |
 |---|---|
-| **179 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
+| **189 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
 | **19 evaluation cases** | grammar-error, empty-argument, off-topic, Task 1 chart, GT letter |
 | **Independent DOCX readers** | macOS `textutil` parses it; `qlmanage` **renders** it through Apple's layout engine |
 | **CI** | self-check runs on Python 3.8 – 3.13, plus a guard that fails if any script imports anything outside the standard library |
@@ -108,6 +108,7 @@ judge the output without running anything.
 ```
 SKILL.md              the instruction set the agent loads
 USAGE.md              full user guide (Chinese)
+USAGE-EXAMPLE.md      a full worked walkthrough of one essay (Chinese, real output)
 RELEASING.md          what to change before publishing
 LICENSE / NOTICE.md   MIT text, plus attribution and trademark notes
 references/           the judgement rules (scoring, band descriptors, task guides, codes)

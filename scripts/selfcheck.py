@@ -26,6 +26,7 @@ REQUIRED_FILES = [
     "README.md",
     "README.en.md",
     "USAGE.md",
+    "USAGE-EXAMPLE.md",
     "LICENSE",
     "NOTICE.md",
     ".gitignore",
@@ -127,6 +128,29 @@ I would like a full refund or a replacement. Please let me know what you can do.
 
 Cheers,
 Zhang Wei
+"""
+
+# The letter above opens with "Dear Sir or Madam," -- an unnamed recipient, and
+# for a long time it was the only GT fixture. That is exactly why two defects
+# survived in the letter check: the greeting pattern matched honorifics only, so
+# "Dear Tom," (the most common opening in the task) was reported as a *missing*
+# greeting; and the closing rule accepted only "Yours sincerely" after a named
+# recipient, rejecting "Best wishes". A fixture that covers one form certifies
+# one form, and the same is true of the contradiction test below, which only
+# exercised the direction that happened to be right.
+GT_NAMED_PROMPT = """Your friend is coming to visit you next month. Write a letter to your friend. In your letter: explain when he should come; say what you will do together; tell him what he should bring. Begin your letter "Dear ...".
+"""
+
+GT_NAMED_LETTER = """Dear Tom,
+
+I am very glad to hear that you are coming to visit me next month.
+
+The best time to come is the second week of May, when the weather is warm and I have a few days off. We can walk along the river and eat at the night market. Please bring a warm jacket, because it is still cold in the evening.
+
+Write back when you know your dates.
+
+Best wishes,
+Li Ming
 """
 
 DUPLICATE_ESSAY = """The government should pay attention on the education.
@@ -704,6 +728,60 @@ def main():
                 check(bool(data["contradictions"]),
                       "--task 1 with a letter prompt is reported as a contradiction")
                 check("1gt" in joined, "the contradiction names the flag to use instead")
+
+            # The direction above produced the right remedy even with the old
+            # flag-keyed table, so on its own it certified nothing. This is the
+            # direction that was wrong: a Task 2 prompt behind `--task 1` used to
+            # be told to retry as `--task 1gt`, i.e. sent to a third wrong branch.
+            backwards = subprocess.run(
+                [sys.executable, analyzer, sound_path, "--task", "1", "--prompt",
+                 os.path.join(ROOT, "evals", "samples", "sample-task2-prompt.txt"), "--json"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+            check(backwards.returncode == 0, "a Task 2 prompt behind --task 1 still runs")
+            if backwards.returncode == 0:
+                joined = " ".join(json.loads(backwards.stdout.decode("utf-8"))["contradictions"])
+                check("--task 2" in joined,
+                      "the remedy names the flag the prompt actually needs")
+                check("--task 1gt" not in joined,
+                      "a Task 2 prompt is not sent to the letter branch as a remedy")
+
+            # A letter to a named friend: the common GT form, and the form the
+            # honorific-only pattern used to reject outright.
+            named_prompt = os.path.join(t1_dir, "named-prompt.txt")
+            named_letter = os.path.join(t1_dir, "named.txt")
+            for path, body in ((named_prompt, GT_NAMED_PROMPT), (named_letter, GT_NAMED_LETTER)):
+                with open(path, "w", encoding="utf-8") as handle:
+                    handle.write(body)
+            named = subprocess.run(
+                [sys.executable, analyzer, named_letter, "--task", "1gt",
+                 "--prompt", named_prompt, "--json"],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+            check(named.returncode == 0, "a letter to a named friend runs")
+            if named.returncode == 0:
+                letter = json.loads(named.stdout.decode("utf-8"))["task1"]
+                check(letter["letter"]["has_greeting"] is True,
+                      '"Dear Tom," counts as a greeting rather than a missing one')
+                check(letter["letter"]["closing_matches_greeting"] is True,
+                      '"Best wishes" is an acceptable close after a named recipient')
+                check(not any("缺少称呼" in finding for finding in letter["findings"]),
+                      "a named greeting produces no false missing-greeting finding")
+
+                # ...but the pairing that really is wrong must still be caught.
+                wrong_letter = os.path.join(t1_dir, "wrong-close.txt")
+                with open(wrong_letter, "w", encoding="utf-8") as handle:
+                    handle.write(GT_NAMED_LETTER.replace("Best wishes,", "Yours faithfully,"))
+                wrong = subprocess.run(
+                    [sys.executable, analyzer, wrong_letter, "--task", "1gt",
+                     "--prompt", named_prompt, "--json"],
+                    stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                )
+                check(wrong.returncode == 0, "a mispaired closing still runs")
+                if wrong.returncode == 0:
+                    letter = json.loads(wrong.stdout.decode("utf-8"))["task1"]
+                    check(letter["letter"]["closing_matches_greeting"] is False,
+                          '"Yours faithfully" after a named recipient is still a mismatch')
     finally:
         shutil.rmtree(t1_dir, ignore_errors=True)
 

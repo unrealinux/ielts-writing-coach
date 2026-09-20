@@ -368,10 +368,20 @@ def find_contradictions(task, relevance):
         return []
     flag = TASK_FLAG_LABEL.get(task, task)
     actual = "、".join(TYPE_LABEL.get(name, name) for name in sorted(detected))
-    suggestion = {"1": "改用 --task 1gt", "1gt": "改用 --task 1", "2": "改用 --task 1（图表）或 --task 1gt（书信）"}
+    # The remedy must come from what the prompt looks like, not from the flag
+    # the caller already passed. Keying it on the flag meant "1" always pointed
+    # at its Task 1 sibling, so a Task 2 prompt passed as `--task 1` was told to
+    # retry as `--task 1gt` -- sending the reader to a third wrong branch and a
+    # second round of confident nonsense.
+    remedies = sorted(candidate for candidate, names in EXPECTED_PROMPT_TYPES.items()
+                      if names & detected)
+    if remedies:
+        suggestion = "题干对应的是 " + " 或 ".join("`--task %s`" % item for item in remedies)
+    else:
+        suggestion = "请确认 --task 取值"
     return ["你指定的是 **%s**（`--task %s`），但题干看起来是 **%s**。"
             "第 7 节会按错误的判据检查，**该节结论不可用**。%s。"
-            % (flag, task, actual, suggestion.get(task, "请确认 --task 取值"))]
+            % (flag, task, actual, suggestion)]
 
 
 def analyse_prompt_relevance(prompt, essay_text):
@@ -482,7 +492,14 @@ PAST_FORM_RE = re.compile(
     r"\b(was|were|had|increased|decreased|rose|fell|declined|dropped|grew|remained|"
     r"peaked|reached|stood|accounted|doubled|halved|tripled|overtook|levelled)\b",
     re.IGNORECASE)
-LETTER_GREETING_RE = re.compile(r"^\s*dear\s+(sir|madam|mr|mrs|ms|dr)\b", re.IGNORECASE)
+LETTER_GREETING_RE = re.compile(
+    # A GT letter addresses either an unknown recipient ("Dear Sir/Madam") or a
+    # specific one ("Dear Tom", "Dear Mr Smith"). Matching only the titles
+    # reported "书信缺少称呼" for "Dear Tom," -- the single most common opening
+    # in the whole task -- so the named form is matched too.
+    r"^\s*dear\s+(sir|madam|mr|mrs|ms|miss|dr|prof)\b"
+    r"|^\s*dear\s+([A-Za-z][\w'’-]*)",
+    re.IGNORECASE)
 LETTER_FAREWELL_RE = re.compile(
     r"\b(yours faithfully|yours sincerely|best wishes|kind regards|yours truly)\b", re.IGNORECASE)
 LETTER_INFORMAL_RE = re.compile(
@@ -532,16 +549,21 @@ def analyse_task1(text, task):
     if task == "1gt":
         greeting = LETTER_GREETING_RE.search(text)
         farewell = LETTER_FAREWELL_RE.search(text)
-        formal_greeting = bool(greeting) and greeting.group(1).lower() in ("sir", "madam")
+        # group(1) is the honorific form, group(2) the named form; exactly one
+        # of them is set. "Dear Sir/Madam" is addressed to nobody in particular
+        # and pairs with "Yours faithfully". Everything else names someone, and
+        # pairs with any of the remaining closings -- requiring "sincerely"
+        # specifically rejected "Best wishes", the standard close in a letter to
+        # a friend. Only the reverse pairing is genuinely wrong.
+        recipient = (greeting.group(1) or greeting.group(2) or "") if greeting else ""
+        unnamed = recipient.lower() in ("sir", "madam")
+        closing = farewell.group(0).lower() if farewell else ""
         letter = {
             "has_greeting": bool(greeting),
             "has_farewell": bool(farewell),
-            "greeting_formal": formal_greeting,
-            # "Dear Sir/Madam" pairs with "Yours faithfully"; a named recipient
-            # pairs with "Yours sincerely".
+            "greeting_formal": unnamed,
             "closing_matches_greeting": bool(greeting and farewell) and (
-                (formal_greeting and "faithfully" in farewell.group(0).lower())
-                or (not formal_greeting and "sincerely" in farewell.group(0).lower())
+                ("faithfully" in closing) if unnamed else ("faithfully" not in closing)
             ),
             "informal_leaks": sorted({m.group(0).lower()
                                       for m in LETTER_INFORMAL_RE.finditer(text)}),
@@ -576,7 +598,7 @@ def analyse_task1(text, task):
             findings.append("❌ 书信缺少结尾敬语（Yours faithfully / Yours sincerely …）。")
         if letter["has_greeting"] and letter["has_farewell"] and not letter["closing_matches_greeting"]:
             findings.append("❌ **称呼与结尾敬语不匹配**（Dear Sir/Madam 配 Yours faithfully；"
-                            "具名收信人配 Yours sincerely）。")
+                            "具名收信人配 Yours sincerely / Best wishes / Kind regards）。")
         if letter["informal_leaks"]:
             findings.append("⚠️ 检出非正式表达，正式书信中应避免：%s"
                             % "、".join("`%s`" % item for item in letter["informal_leaks"]))
