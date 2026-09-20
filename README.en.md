@@ -9,7 +9,7 @@ comments**.
 
 Zero dependencies (Python standard library only), offline, and byte-reproducible.
 
-**Version 1.13.1**
+**Version 1.13.2**
 
 ---
 
@@ -35,7 +35,7 @@ report.
 ## Install
 
 ```bash
-unzip ielts-writing-coach-skill-v1.13.1.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-v1.13.2.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 189 checks
 ```
 

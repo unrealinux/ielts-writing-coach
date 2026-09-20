@@ -1,6 +1,6 @@
 # 使用说明
 
-> `ielts-writing-coach` v1.13.1 ｜ 面向使用者，不假设你懂代码或看过源码。
+> `ielts-writing-coach` v1.13.2 ｜ 面向使用者，不假设你懂代码或看过源码。
 > **想看一遍完整的真实走查，直接读 [`USAGE-EXAMPLE.md`](USAGE-EXAMPLE.md)**——
 > 一篇作文从贴进对话到拿到报告与批改稿，每一步都有实际输出。
 > 想了解设计原理与竞品对比，看 `README.md`；想改这个 skill，看 `SKILL.md`；

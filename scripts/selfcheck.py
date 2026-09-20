@@ -1137,28 +1137,45 @@ def main():
 
     print("\n[16] documentation claims")
     # A coverage number written in prose rots the moment a check is added; this
-    # bundle got it wrong three times. Declaring it is only safe when something
-    # verifies it, so every README's number is compared against the real total.
-    # All READMEs are folded into one check so that this last section keeps
+    # bundle got it wrong four times. Declaring it is only safe when something
+    # verifies it, so every document that states the number is compared against
+    # the real total. The scope was two READMEs until USAGE-EXAMPLE.md shipped
+    # saying "179 项" in the same release that made it 189 -- the number had
+    # simply moved to a file nothing was watching. Any document that mentions
+    # the count now has to mention the right one.
+    # All files are folded into one check so that this last section keeps
     # contributing exactly one check -- see the note in [15].
     total = len(checks_run) + 1  # this check is the last one
     problems = []
-    for readme_name in ("README.md", "README.en.md"):
-        readme_path = os.path.join(ROOT, readme_name)
-        if not os.path.isfile(readme_path):
+    # (file, patterns, whether the file must state a count at all). The two
+    # READMEs must; the guides may stay quiet, but if they speak they must be
+    # right -- a mandatory number in a walkthrough would be noise, a wrong one
+    # is a defect.
+    declared_in = (
+        ("README.md", (r"自检 \*\*(\d+)\*\* 项",), True),
+        ("README.en.md", (r"(\d+)\s+(?:self-)?checks?\b",), True),
+        ("USAGE.md", (r"\*\*(\d+)\s*项\*\*检查",), False),
+        ("USAGE-EXAMPLE.md", (r"#\s*(\d+)\s*项",), False),
+    )
+    for name, patterns, required in declared_in:
+        path = os.path.join(ROOT, name)
+        if not os.path.isfile(path):
+            if required:
+                problems.append("%s is missing" % name)
             continue
-        with open(readme_path, encoding="utf-8") as handle:
+        with open(path, encoding="utf-8") as handle:
             body = handle.read()
         numbers = set()
-        for pattern in (r"自检 \*\*(\d+)\*\* 项", r"(\d+)\s+(?:self-)?checks?\b"):
+        for pattern in patterns:
             for match in re.finditer(pattern, body):
                 numbers.add(int(match.group(1)))
         if not numbers:
-            problems.append("%s declares no count" % readme_name)
+            if required:
+                problems.append("%s declares no count" % name)
         elif numbers != {total}:
-            problems.append("%s says %s" % (readme_name, "/".join(str(n) for n in sorted(numbers))))
+            problems.append("%s says %s" % (name, "/".join(str(n) for n in sorted(numbers))))
     check(not problems,
-          "every README's declared count matches the real total "
+          "every document's declared count matches the real total "
           "(total must be %d -- the TOTAL, not the passing count; %s)"
           % (total, "; ".join(problems) or "all agree"))
 
