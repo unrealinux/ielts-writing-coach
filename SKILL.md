@@ -4,7 +4,7 @@ description: "Use when the user wants an IELTS essay corrected, graded, scored, 
 whenToUse: "Load when the user submits an IELTS writing task, prompt, or essay and wants scoring, correction, feedback, or an improved version. Also load when the user asks for an IELTS writing practice plan, model answer, or a review of a previous correction."
 license: MIT
 metadata:
-  version: "1.13.2"
+  version: "1.14.0"
   license: MIT
   requires: "Python 3.8+ (standard library only)"
   updated: "2026-09-20"
@@ -219,6 +219,23 @@ python3 scripts/track_progress.py <workspace>/ielts-reports --out <workspace>/ie
 
 输出文件名以 `_` 开头可避免它被下次运行的目录扫描当成报告（脚本同时跳过 `_` 与 `.` 开头的文件）。
 
+### Step 7 — 校准记录（可选，只在用户想量「准不准」时）
+
+工具的分是预估，而**它到底偏多少，只有用户的作文能量**。当用户问「这个准吗」「和你上次给的怎么对不上」，
+或者你已经为他改过两篇以上时，**可以主动提一次**：
+
+1. 从 `templates/calibration-log.md` 复制一份到 `<workspace>/ielts-calibration/<日期>-<题型>.md`
+2. **你替用户填你已知的部分**：日期、题型、`工具总分`（从刚给的报告里取）。**不要替他填「你的总分」**
+3. 问他一句：这篇有没有老师给的分或官方模考分？有就填上；没有就留空。再问他：报告里有没有**他核对原文后确认说错了的**、有没有**确实错了而报告没提的**
+4. 攒够几篇后：`python3 scripts/calibrate.py <workspace>/ielts-calibration`
+
+**四条约束，别越过**：
+
+- **不要替用户编「你的总分」。** 留空是有信息量的（脚本会报「N 篇未判定」），编一个数字会让偏差统计变成假的。
+- **误报只算「工具说错了」，不算「用户不同意」。** 判据是事实，不是偏好。用户说「我觉得这里没那么严重」不是误报。
+- **`calibrate.py` 拒绝下结论时，不要替它下。** 少于 5 篇有对照它不给偏差方向，少于 3 条误报漏报它不排序——这是内建的诚实性约束，和同一天的报告不算趋势同一个道理。
+- **不要宣称「验证过准确性」。** 校准记录量的是「工具对**这个人**准不准」，不是「工具准不准」。而且它不是盲测：用户先读了报告再判断，量到的偏差通常**小于**真实偏差。
+
 ## 2. 报告必备结构
 
 ```markdown
@@ -264,8 +281,10 @@ python3 scripts/track_progress.py <workspace>/ielts-reports --out <workspace>/ie
 | `references/error-taxonomy.md` | 建错误清单时——代码全表 + 中国考生高频错误 |
 | `references/language-bank.md` | 改写与词汇升级时——学术词块与替换表 |
 | `templates/report-template.md` | 生成报告时 |
+| `templates/calibration-log.md` | Step 7 校准记录（用户想量「这个工具对我准不准」时） |
 | `scripts/analyze_essay.py` | Step 1 客观预分析 |
 | `scripts/track_progress.py` | Step 6 跨篇追踪（报告目录已有历史记录时） |
+| `scripts/calibrate.py` | Step 7 汇总校准记录 |
 | `scripts/report_to_docx.py` | 用户要带 Word 批注的 `.docx` 时——从已有报告生成，不重新批改 |
 | `scripts/audit_report.py` | **交付报告前自查**——检查是否有同一处缺陷被多个评分项重复扣分 |
 

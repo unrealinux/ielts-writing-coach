@@ -9,7 +9,7 @@ comments**.
 
 Zero dependencies (Python standard library only), offline, and byte-reproducible.
 
-**Version 1.13.2**
+**Version 1.14.0**
 
 ---
 
@@ -22,6 +22,7 @@ Zero dependencies (Python standard library only), offline, and byte-reproducible
 | **Real Word comments** | A `.docx` with comments anchored to the exact phrases, nested-comment support, and margin tags (`Articles · 冠词`) — written directly as OOXML, no `python-docx` |
 | **Progress tracking** | Per-criterion trend across essays, the arithmetic of how much the next half band costs, and which error codes keep coming back |
 | **Report audit** | Checks whether one defect was charged to two criteria — double-charging depresses the band systematically |
+| **Calibration log** | A template you fill in per essay plus `scripts/calibrate.py`, so you can measure whether the estimate runs high or low **on your own essays**. It refuses to state a direction below 5 paired scores, and says plainly that it is not a blinded test |
 | **Three independent axes** | error density (grammar), argument support, and prompt relevance are read separately and **never compensate for each other** |
 
 ### The one thing it is opinionated about
@@ -35,8 +36,8 @@ report.
 ## Install
 
 ```bash
-unzip ielts-writing-coach-skill-v1.13.2.zip -d ~/.agents/skills/
-python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 189 checks
+unzip ielts-writing-coach-skill-v1.14.0.zip -d ~/.agents/skills/
+python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 190 checks
 ```
 
 Or clone into the same place:
@@ -82,7 +83,7 @@ judge the output without running anything.
 
 | | |
 |---|---|
-| **189 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
+| **190 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
 | **19 evaluation cases** | grammar-error, empty-argument, off-topic, Task 1 chart, GT letter |
 | **Independent DOCX readers** | macOS `textutil` parses it; `qlmanage` **renders** it through Apple's layout engine |
 | **CI** | self-check runs on Python 3.8 – 3.13, plus a guard that fails if any script imports anything outside the standard library |
@@ -112,9 +113,9 @@ USAGE-EXAMPLE.md      a full worked walkthrough of one essay (Chinese, real outp
 RELEASING.md          what to change before publishing
 LICENSE / NOTICE.md   MIT text, plus attribution and trademark notes
 references/           the judgement rules (scoring, band descriptors, task guides, codes)
-templates/            the report template
+templates/            the report template, and the calibration log a user fills in
 scripts/              analyze_essay, report_to_docx, track_progress, audit_report,
-                      ielts_codes, check_stdlib_only, selfcheck
+                      calibrate, ielts_codes, check_stdlib_only, selfcheck
 evals/                19 evaluation cases and their fixtures
 examples/             a finished report and its .docx
 .github/workflows/    the CI that holds the 3.8+ / stdlib-only promises

@@ -43,11 +43,13 @@ REQUIRED_FILES = [
     "references/error-taxonomy.md",
     "references/language-bank.md",
     "templates/report-template.md",
+    "templates/calibration-log.md",
     "scripts/analyze_essay.py",
     "scripts/track_progress.py",
     "scripts/report_to_docx.py",
     "scripts/ielts_codes.py",
     "scripts/check_stdlib_only.py",
+    "scripts/calibrate.py",
     "evals/evals.json",
     "evals/samples/sample-task2-essay.txt",
     "evals/samples/sample-task2-prompt.txt",
@@ -365,9 +367,18 @@ def main():
     check(len(body.strip()) > 500, "instruction body is non-trivial")
 
     print("\n[3] referenced resources exist")
+    # One check for the whole set, not one per reference. Emitting a check per
+    # path made the documented total depend on how many resources SKILL.md
+    # happens to list: adding a single line to the instruction file silently
+    # changed the number the READMEs declare, which is a footgun aimed at
+    # exactly the invariant [17] is trying to hold. The message still names
+    # every missing path, so nothing is lost but the churn.
     referenced = set(re.findall(r"`((?:references|templates|scripts|evals)/[A-Za-z0-9_./-]+)`", raw))
-    for relative in sorted(referenced):
-        check(os.path.isfile(os.path.join(ROOT, relative)), "referenced: %s" % relative)
+    dangling = sorted(relative for relative in referenced
+                      if not os.path.isfile(os.path.join(ROOT, relative)))
+    check(not dangling,
+          "every resource SKILL.md references shipped (%d checked; %s)"
+          % (len(referenced), "; ".join(dangling) if dangling else "all present"))
 
     print("\n[4] analyzer runs on the bundled sample")
     sample = os.path.join(ROOT, "evals", "samples", "sample-task2-essay.txt")
@@ -1135,7 +1146,153 @@ def main():
           "are the 3.8 CI job's business, not this check's)"
           % ("; ".join(syntax_bad[:2]) or "all parse under 3.8 grammar"))
 
-    print("\n[16] documentation claims")
+    print("\n[16] calibration log: template and aggregator agree, and small samples are refused")
+    cal_dir = tempfile.mkdtemp(prefix="ielts-cal-")
+    try:
+        calibrator = os.path.join(ROOT, "scripts", "calibrate.py")
+        template_path = os.path.join(ROOT, "templates", "calibration-log.md")
+        with open(template_path, encoding="utf-8") as handle:
+            template = handle.read()
+
+        # The user fills in the shipped template, so the template and the parser
+        # are one contract split across two files. A label renamed on either side
+        # means a correctly filled record reads as empty -- and the aggregator
+        # would report "0 records", which looks like the user's mistake.
+        labels = ("- 日期：", "- 题型：", "- 工具总分：", "- 你的总分：",
+                  "- 你的判断来源：", "## 误报", "## 漏报")
+        absent = [label for label in labels if label not in template]
+        check(not absent,
+              "the shipped template carries every label the aggregator reads (%s)"
+              % ("; ".join(absent) if absent else "all present"))
+
+        def write_record(directory, name, date, tool, own, source="老师",
+                         false_positives=(), false_negatives=()):
+            body = template
+            for pattern, value in (
+                (r"^- 日期：.*$", "- 日期：%s" % date),
+                (r"^- 工具总分：.*$", "- 工具总分：%s" % tool),
+                (r"^- 你的总分：.*$", "- 你的总分：%s" % own),
+                (r"^- 你的判断来源：.*$", "- 你的判断来源：%s" % source),
+            ):
+                # A lambda replacement, never a string: a value containing a
+                # backslash would otherwise be read as a group reference.
+                body = re.sub(pattern, lambda _match, text=value: text, body,
+                              count=1, flags=re.MULTILINE)
+            fp_rows = "\n".join("| %s | %s |" % pair for pair in false_positives) or "|  |  |"
+            fn_rows = "\n".join("| %s | %s |" % pair for pair in false_negatives) or "|  |  |"
+            body = re.sub(r"(\| 工具的说法 \| 为什么不是问题 \|\n\|---\|---\|\n)\|  \|  \|",
+                          lambda match: match.group(1) + fp_rows, body, count=1)
+            body = re.sub(r"(\| 原文 \| 问题 \|\n\|---\|---\|\n)\|  \|  \|",
+                          lambda match: match.group(1) + fn_rows, body, count=1)
+            path = os.path.join(directory, name)
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(body)
+            return path
+
+        def run_calibrate(directory, *extra):
+            return subprocess.run(
+                [sys.executable, calibrator, directory] + list(extra),
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            )
+
+        empty = os.path.join(cal_dir, "empty")
+        os.mkdir(empty)
+        result = run_calibrate(empty)
+        check(result.returncode == 0 and "没有找到校准记录" in result.stdout.decode("utf-8"),
+              "an empty records directory is reported as empty, not as zero bias")
+
+        # Two paired essays: enough to show the difference, not enough to call it
+        # a bias. The refusal is the feature -- three self-authored samples once
+        # produced a fabricated rule in this very bundle.
+        few = os.path.join(cal_dir, "few")
+        os.mkdir(few)
+        for index, day in enumerate(("01", "02"), start=1):
+            write_record(few, "2026-08-%s-task2.md" % day, "2026-08-%s" % day, "6.5", "6.0")
+        result = run_calibrate(few)
+        body = result.stdout.decode("utf-8")
+        check(result.returncode == 0 and "6.5 | 6.0 | +0.5" in body,
+              "the aggregator reads the scores a user filled into the shipped template")
+        check("不足以下结论" in body,
+              "two paired essays are not enough to state a bias direction")
+
+        # Six paired essays, all leaning the same way: that is a direction, and
+        # the one-sided case must not be dismissed just because two essays tie.
+        many = os.path.join(cal_dir, "many")
+        os.mkdir(many)
+        outcomes = (("6.5", "6.0"), ("6.0", "6.0"), ("6.5", "5.5"),
+                    ("7.0", "6.5"), ("6.0", "5.5"), ("6.5", "6.5"))
+        for index, (tool, own) in enumerate(outcomes):
+            write_record(many, "2026-09-%02d-task2.md" % (index + 1),
+                         "2026-09-%02d" % (index + 1), tool, own,
+                         false_positives=(("GRA-ART：`the society`", "抽象名词用对"),),
+                         false_negatives=(("第二段没有主题句", "CC-PROG"),))
+        result = run_calibrate(many)
+        body = result.stdout.decode("utf-8")
+        check(result.returncode == 0 and "从未出现工具偏低" in body,
+              "a one-sided result is called one-sided even when some essays tie")
+        check("GRA-ART" in body and "误报（工具说错、其实没错）：**6** 条" in body,
+              "both finding tables are parsed and counted from the template layout")
+
+        # The shipped template, copied and not filled in at all. Every field is
+        # empty, and every field must read as empty: a pattern whose whitespace
+        # can cross a line ending captures the *next* line instead, so a blank
+        # "your total" silently becomes the heading below it. That is the
+        # "missing versus unparsed" confusion this bundle has hit before.
+        blank = os.path.join(cal_dir, "blank")
+        os.mkdir(blank)
+        with open(os.path.join(blank, "2026-09-20-task2.md"), "w", encoding="utf-8") as handle:
+            handle.write(template)
+        result = run_calibrate(blank, "--json")
+        # Assert on the parsed fields, not on the aggregate: with a line-crossing
+        # pattern the numeric fields still read as "missing" (the captured text
+        # contains no digits), so a paired-count assertion passes while the
+        # source field is quietly holding the heading from the next line. The
+        # first version of this check did exactly that and certified nothing.
+        check(result.returncode == 0, "an unfilled template still runs")
+        if result.returncode == 0:
+            summary = json.loads(result.stdout.decode("utf-8"))
+            entries = summary["entries"]
+            check(len(entries) == 1
+                  and entries[0]["tool_total"] is None
+                  and entries[0]["own_total"] is None
+                  and not entries[0]["own_source"]
+                  and not entries[0]["date"].startswith("#")
+                  and summary["paired"] == 0
+                  and not summary["signals"],
+                  "an unfilled template reads as empty rather than capturing the next line (%s)"
+                  % {key: entries[0][key] for key in ("date", "tool_total", "own_source")}
+                  if entries else "no entries parsed")
+
+        # A record whose comparison was left blank must be counted as unpaired
+        # rather than quietly dropped or treated as a zero difference.
+        write_record(many, "2026-09-30-task2.md", "2026-09-30", "6.0", "")
+        result = run_calibrate(many)
+        body = result.stdout.decode("utf-8")
+        check("填了自己判断的：6 / 7" in body,
+              "a record without the user's own score is counted as unpaired")
+
+        # English labels, because a user may translate the template first.
+        english = os.path.join(cal_dir, "english")
+        os.mkdir(english)
+        with open(os.path.join(english, "2026-09-10-task2.md"), "w", encoding="utf-8") as handle:
+            handle.write("# Calibration log\n\n- date: 2026-09-10\n- task: Task 2\n"
+                         "- tool total: 6.5\n- your total: 6.0\n- your source: teacher\n\n"
+                         "## False positives\n\n| What the tool said | Why |\n|---|---|\n"
+                         "| GRA-ART: `the society` | used correctly |\n\n"
+                         "## Missed\n\n| Original | Problem |\n|---|---|\n"
+                         "| no topic sentence | CC-PROG |\n")
+        result = run_calibrate(english)
+        body = result.stdout.decode("utf-8")
+        check(result.returncode == 0 and "6.5 | 6.0 | +0.5" in body
+              and "误报（工具说错、其实没错）：**1** 条" in body,
+              "a translated record is still read rather than silently ignored")
+
+        result = run_calibrate(os.path.join(cal_dir, "does-not-exist"))
+        check(result.returncode == 2, "a missing records directory fails instead of reporting no bias")
+    finally:
+        shutil.rmtree(cal_dir, ignore_errors=True)
+
+    print("\n[17] documentation claims")
     # A coverage number written in prose rots the moment a check is added; this
     # bundle got it wrong four times. Declaring it is only safe when something
     # verifies it, so every document that states the number is compared against

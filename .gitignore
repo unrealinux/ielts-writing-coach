@@ -9,9 +9,10 @@ __pycache__/
 .vscode/
 *.swp
 
-# 用户产物：报告、批改稿、趋势文件都不该进版本库
+# 用户产物：报告、批改稿、趋势文件、校准记录都不该进版本库
 ielts-reports/
 ielts-reviewed/
+ielts-calibration/
 *.docx
 *.doc
 !examples/*.docx
