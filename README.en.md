@@ -9,7 +9,7 @@ comments**.
 
 Zero dependencies (Python standard library only), offline, and byte-reproducible.
 
-**Version 1.14.0**
+**Version 1.15.0**
 
 ---
 
@@ -36,8 +36,8 @@ report.
 ## Install
 
 ```bash
-unzip ielts-writing-coach-skill-v1.14.0.zip -d ~/.agents/skills/
-python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 194 checks
+unzip ielts-writing-coach-skill-v1.15.0.zip -d ~/.agents/skills/
+python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 196 checks
 ```
 
 Or clone into the same place:
@@ -83,7 +83,7 @@ judge the output without running anything.
 
 | | |
 |---|---|
-| **194 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
+| **196 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
 | **19 evaluation cases** | grammar-error, empty-argument, off-topic, Task 1 chart, GT letter |
 | **Independent DOCX readers** | macOS `textutil` parses it; `qlmanage` **renders** it through Apple's layout engine |
 | **CI** | self-check runs on Python 3.8 – 3.13, plus a guard that fails if any script imports anything outside the standard library |
@@ -112,7 +112,8 @@ USAGE.md              full user guide (Chinese)
 USAGE-EXAMPLE.md      a full worked walkthrough of one essay (Chinese, real output)
 RELEASING.md          what to change before publishing
 LICENSE / NOTICE.md   MIT text, plus attribution and trademark notes
-references/           the judgement rules (scoring, band descriptors, task guides, codes)
+references/           the judgement rules (scoring, band descriptors, task guides, codes),
+                      plus calibration-evidence.md (maintainer only, not read while scoring)
 templates/            the report template, and the calibration log a user fills in
 scripts/              analyze_essay, report_to_docx, track_progress, audit_report,
                       calibrate, ielts_codes, check_stdlib_only, selfcheck

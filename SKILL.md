@@ -4,7 +4,7 @@ description: "Use when the user wants an IELTS essay corrected, graded, scored, 
 whenToUse: "Load when the user submits an IELTS writing task, prompt, or essay and wants scoring, correction, feedback, or an improved version. Also load when the user asks for an IELTS writing practice plan, model answer, or a review of a previous correction."
 license: MIT
 metadata:
-  version: "1.14.0"
+  version: "1.15.0"
   license: MIT
   requires: "Python 3.8+ (standard library only)"
   updated: "2026-09-20"
@@ -18,7 +18,7 @@ metadata:
 
 1. **证据优先**：每一条扣分和每一条表扬都必须引用原文的具体句子或短语（`§段落号` + 原文片段）。禁止"整体不错""词汇较丰富"这类无证据评价。
 2. **不编造**：不得虚构题目要求、不得替考生补写他没写的论点、不得声称这是官方评分。报告开头必须写明 "预估分，非官方成绩"。
-3. **分数要克制**：AI 评雅思作文最常见的失败是给分虚高。默认校准：未经专门训练的考生作文绝大多数落在 **5.0–6.5**；给出 Band 7 必须有明确证据；Band 8+ 在限时作文中属罕见，除非四项都达标。用 `references/band-descriptors.md` 的"该档位门槛"逐条核对，不要凭语感给分。
+3. **按描述符给分**：逐条核对 `references/band-descriptors.md` 的"该档位门槛"，不要凭语感给分。四项各自独立判定，各自的档位由证据决定——**不要预设任何档位，也不要假定分数集中在某一段**。
 4. **批改 ≠ 代写**：改写只针对**问题句子和段落**，并说明改动理由。不要重写整篇后让用户照抄——那会掩盖他自己的错误模式。
 5. **中英分工**：诊断、解释、建议用**中文**；原文引用、改写的英文句子、范文段落、词块保留**英文**。除非用户要求全英文。
 6. **Task 1 与 Task 2 的评价体系不同**：Task 1 评的是 Task Achievement（概述 + 数据选取），不是"论证"；Task 2 评的是 Task Response（立场 + 论证）。不要交叉套用。
@@ -97,7 +97,7 @@ python3 scripts/analyze_essay.py <essay-file> --task 2 \
 2. **本文达标与否的证据**（引用原文）
 3. **离上一档差什么**（一条可执行动作，不是"多练习"）
 
-详细评分流程与**双向校准清单**（防虚高 §二 + 防虚低 §三）见 `references/scoring-protocol.md`。
+详细评分流程与证据要求见 `references/scoring-protocol.md`。
 
 ### Step 3 — 建立错误清单
 
@@ -112,7 +112,7 @@ TR-OFF 偏题 | TR-PART 漏答要点 | TR-UNDEV 论证不足 | TR-GEN 空泛
 TA-OVER 缺概述 | TA-DATA 数据误读/错报 | TA-FEAT 关键特征遗漏
 ```
 
-**每一处缺陷只归一个评分项**（`references/scoring-protocol.md` §八）。一个逗号拼接会同时表现为
+**每一处缺陷只归一个评分项**（`references/scoring-protocol.md` §五）。一个逗号拼接会同时表现为
 标点错误、指代不清、逻辑被掩盖——如果三项都拿它当降档证据，一个错误被算了三次，
 **四项各被压低一点，总分可能少 0.5**。这和高估一样有害，而且更隐蔽，因为报告看起来"证据充分"。
 
@@ -273,10 +273,11 @@ python3 scripts/track_progress.py <workspace>/ielts-reports --out <workspace>/ie
 
 | 文件 | 何时加载 |
 |---|---|
-| `references/scoring-protocol.md` | 打分前——**双向校准**（防虚高 §二 + 防虚低 §三）与判定流程 |
+| `references/scoring-protocol.md` | 打分前——判定三问与证据要求 |
 | `references/failure-modes.md` | 定位"这篇真正的问题是什么"、排定下一步动作优先级、做跨档算术（**建议每次批改都加载**） |
 | `references/task1-guide.md` | **Task 1 必读**——overview 写法、数据取舍、GT 书信规则（第 7 节的 Task 1 检查配合此文件使用） |
 | `references/band-descriptors.md` | 打分时——四项标准 Band 5–9 门槛（原创改写摘要） |
+| `references/calibration-evidence.md` | **打分时不要加载。** 维护者文档：本 skill 的分数偏差测量 |
 | `references/task2-guide.md` | Task 2——题型识别、立场、论证深度、跑题判定 |
 | `references/error-taxonomy.md` | 建错误清单时——代码全表 + 中国考生高频错误 |
 | `references/language-bank.md` | 改写与词汇升级时——学术词块与替换表 |

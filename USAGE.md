@@ -1,6 +1,6 @@
 # 使用说明
 
-> `ielts-writing-coach` v1.14.0 ｜ 面向使用者，不假设你懂代码或看过源码。
+> `ielts-writing-coach` v1.15.0 ｜ 面向使用者，不假设你懂代码或看过源码。
 > **想看一遍完整的真实走查，直接读 [`USAGE-EXAMPLE.md`](USAGE-EXAMPLE.md)**——
 > 一篇作文从贴进对话到拿到报告与批改稿，每一步都有实际输出。
 > 想了解设计原理与竞品对比，看 `README.md`；想改这个 skill，看 `SKILL.md`；
@@ -384,7 +384,8 @@ python3 scripts/calibrate.py ~/ielts-calibration
 | **不保证提升分数** | 它指出问题与优先级，练不练是你的事 |
 | **启发式会有误报漏报** | 分析器的错误探测是正则，报告里每处标注"需人工确认" |
 | **阈值是少量样本校准的** | 用于触发复核，不是判定标准 |
-| **分数准确性未经检验** | 从没和考官给的分比对过，也没有任何考官评过分的作文跑过。所以第 7 节才要有校准记录——**「准不准」这个问题只能拿你自己的作文量**，工具自己回答不了 |
+| **绝对分典型误差约半个档位** | 24 篇真实作文的测量：平均绝对误差 0.48，且区间比真实分布窄（斜率 0.45）。**排序比绝对值可信**；测量方法见 `references/calibration-evidence.md` |
+| **仍未与考官评分比对过** | 上面那个测量用的是一份公开标注语料，其出处未能独立核实。所以第 7 节的校准记录仍然必要——**「对我准不准」只能拿你自己的作文量** |
 
 ---
 
@@ -412,7 +413,7 @@ unzip ielts-writing-coach-skill-vX.Y.Z.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **194 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
+会跑 **196 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 
@@ -440,7 +441,8 @@ ielts-writing-coach/
 ├── NOTICE.md                     # 许可说明、第三方致谢、IELTS 商标声明
 ├── examples/                     # 现成的产物示例：批改报告 + 带批注的 docx
 ├── references/                   # 判断规则（模型的参考手册）
-│   ├── scoring-protocol.md       #   打分流程、双向校准、跨档算术、缺陷归属
+│   ├── scoring-protocol.md       #   打分流程、跨档算术、缺陷归属
+│   ├── calibration-evidence.md   #   分数偏差的测量（维护者文档，打分时不加载）
 │   ├── band-descriptors.md       #   四项标准 Band 5–9 门槛
 │   ├── failure-modes.md          #   三种失败模式与诊断优先级
 │   ├── task1-guide.md            #   Task 1 图表 / GT 书信
