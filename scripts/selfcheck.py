@@ -1009,6 +1009,60 @@ def main():
         check(not re.search(r"需要四项总和增加\s*\*{0,2}1\.5", reference),
               "the reference does not claim a single fixed gap")
 
+    print("\n[12b] the score calibration is symmetric, and free of unsourced frequency claims")
+    # scoring-protocol.md carried a seven-row anti-inflation checklist and
+    # nothing pointing the other way, plus a band anchor calling 6.0 "the most
+    # common" pass mark. Measured against 24 real essays that produced a
+    # regression slope of 0.32: the tool used one band of output range where the
+    # reference used 2.5, over-scoring weak essays and under-scoring strong ones.
+    # The asymmetry was invisible because every assertion in this file was about
+    # arithmetic, and this failure lived in the judgement rules. These checks
+    # exist so it cannot come back quietly.
+    protocol = open(os.path.join(ROOT, "references", "scoring-protocol.md"),
+                    encoding="utf-8").read()
+
+    def checklist_rows(heading):
+        """Table rows under the `##` heading that contains `heading`."""
+        lines = protocol.splitlines()
+        start = None
+        for position, line in enumerate(lines):
+            if line.startswith("## ") and heading in line:
+                start = position + 1
+                break
+        if start is None:
+            return None
+        rows = 0
+        for line in lines[start:]:
+            if line.startswith("## "):
+                break
+            stripped = line.strip()
+            if stripped.startswith("|") and not re.match(r"^\|[\s:|-]+\|$", stripped):
+                rows += 1
+        return max(rows - 1, 0)  # minus the header row
+
+    inflation = checklist_rows("防虚高")
+    deflation = checklist_rows("防虚低")
+    check(inflation is not None and deflation is not None,
+          "both calibration directions have a checklist (防虚高=%s, 防虚低=%s)"
+          % (inflation, deflation))
+    check(inflation and deflation and min(inflation, deflation) >= 5
+          and max(inflation, deflation) <= 2 * min(inflation, deflation),
+          "the two checklists are comparable in size (%s vs %s rows)"
+          % (inflation, deflation))
+
+    # An unsourced distributional claim is an anchor: calling one band "the most
+    # common" installs that band before any evidence is weighed. The bundle has
+    # no source for any such figure, so it must not state one.
+    anchor = protocol.split("## 四、Band 锚点")[-1].split("## 五、")[0]
+    offending = [phrase for phrase in ("最常见", "最常出现", "罕见", "大多数考生")
+                 if phrase in anchor]
+    check(not offending,
+          "the band anchor states no unsourced frequency claim (%s)"
+          % ("; ".join(offending) if offending else "none"))
+
+    check("0.32" in protocol and "回归斜率" in protocol,
+          "the protocol records the measurement that motivated the second checklist")
+
     print("\n[13] release metadata: one version, stated consistently")
     front = open(os.path.join(ROOT, "SKILL.md"), encoding="utf-8").read()
     version_match = re.search(r'^\s*version:\s*"([^"]+)"', front, re.MULTILINE)

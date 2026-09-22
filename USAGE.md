@@ -412,7 +412,7 @@ unzip ielts-writing-coach-skill-vX.Y.Z.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **190 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
+会跑 **194 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 
@@ -440,7 +440,7 @@ ielts-writing-coach/
 ├── NOTICE.md                     # 许可说明、第三方致谢、IELTS 商标声明
 ├── examples/                     # 现成的产物示例：批改报告 + 带批注的 docx
 ├── references/                   # 判断规则（模型的参考手册）
-│   ├── scoring-protocol.md       #   打分流程、防虚高校准、跨档算术、缺陷归属
+│   ├── scoring-protocol.md       #   打分流程、双向校准、跨档算术、缺陷归属
 │   ├── band-descriptors.md       #   四项标准 Band 5–9 门槛
 │   ├── failure-modes.md          #   三种失败模式与诊断优先级
 │   ├── task1-guide.md            #   Task 1 图表 / GT 书信

@@ -97,7 +97,7 @@ python3 scripts/analyze_essay.py <essay-file> --task 2 \
 2. **本文达标与否的证据**（引用原文）
 3. **离上一档差什么**（一条可执行动作，不是"多练习"）
 
-详细评分流程与防虚高校准清单见 `references/scoring-protocol.md`。
+详细评分流程与**双向校准清单**（防虚高 §二 + 防虚低 §三）见 `references/scoring-protocol.md`。
 
 ### Step 3 — 建立错误清单
 
@@ -112,7 +112,7 @@ TR-OFF 偏题 | TR-PART 漏答要点 | TR-UNDEV 论证不足 | TR-GEN 空泛
 TA-OVER 缺概述 | TA-DATA 数据误读/错报 | TA-FEAT 关键特征遗漏
 ```
 
-**每一处缺陷只归一个评分项**（`references/scoring-protocol.md` §七）。一个逗号拼接会同时表现为
+**每一处缺陷只归一个评分项**（`references/scoring-protocol.md` §八）。一个逗号拼接会同时表现为
 标点错误、指代不清、逻辑被掩盖——如果三项都拿它当降档证据，一个错误被算了三次，
 **四项各被压低一点，总分可能少 0.5**。这和高估一样有害，而且更隐蔽，因为报告看起来"证据充分"。
 
@@ -273,7 +273,7 @@ python3 scripts/track_progress.py <workspace>/ielts-reports --out <workspace>/ie
 
 | 文件 | 何时加载 |
 |---|---|
-| `references/scoring-protocol.md` | 打分前——防虚高校准与判定流程 |
+| `references/scoring-protocol.md` | 打分前——**双向校准**（防虚高 §二 + 防虚低 §三）与判定流程 |
 | `references/failure-modes.md` | 定位"这篇真正的问题是什么"、排定下一步动作优先级、做跨档算术（**建议每次批改都加载**） |
 | `references/task1-guide.md` | **Task 1 必读**——overview 写法、数据取舍、GT 书信规则（第 7 节的 Task 1 检查配合此文件使用） |
 | `references/band-descriptors.md` | 打分时——四项标准 Band 5–9 门槛（原创改写摘要） |

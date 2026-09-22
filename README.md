@@ -30,7 +30,7 @@ ielts-writing-coach/
 ├── NOTICE.md                         # 许可说明与第三方致谢
 ├── examples/                         # 现成产物：批改报告 + 带批注 docx
 ├── references/
-│   ├── scoring-protocol.md           # 打分流程 + 防虚高校准清单 + 取整规则
+│   ├── scoring-protocol.md           # 打分流程 + 双向校准清单（防虚高/防虚低）+ 取整规则
 │   ├── failure-modes.md              # 三种失败模式、诊断优先级、跨档算术
 │   ├── band-descriptors.md           # 四项标准 Band 5–9 门槛（中文改写摘要）
 │   ├── task1-guide.md                # Task 1 Academic 图表/流程/地图 + GT 书信
@@ -172,7 +172,7 @@ python3 scripts/track_progress.py ~/ielts-reports --out ~/ielts-reports/_趋势.
 三套验证，都能独立复现：
 
 ```bash
-python3 scripts/selfcheck.py              # 自检 **190** 项：格式、解析、聚合、docx 结构与幂等性
+python3 scripts/selfcheck.py              # 自检 **194** 项：格式、解析、聚合、docx 结构与幂等性
                                           # 内含 CI 承诺一致性（矩阵起点 = 声明的 3.8+、脚本路径存在）
 python3 scripts/check_stdlib_only.py      # 断言所有脚本只 import 标准库
 textutil -info out.docx                   # macOS 独立 OOXML 实现能否读取（可选）
