@@ -1151,6 +1151,35 @@ def main():
     check("四项分项预估分" not in template,
           "the release-note template does not lead with the band estimate")
 
+    # Same repositioning at the front door. The READMEs are what most people
+    # read first, and leading with the band estimate advertises the one number
+    # measured to be the weakest -- and the one that a naive reading takes as a
+    # precise result.
+    for name, opener, caveat, stale in (
+        ("README.md", "分数是最弱的一环", "平均绝对误差", "四项分项预估分"),
+        ("README.en.md", "The score is the weakest part", "Mean absolute error",
+         "four-criterion\nband estimate"),
+    ):
+        body = open(os.path.join(ROOT, name), encoding="utf-8").read()
+        head = body[:4000]
+        check(opener in head and caveat in head,
+              "%s introduces the score with its measured error" % name)
+        check(stale not in head,
+              "%s does not lead with the band estimate" % name)
+        # The calibration apparatus was removed in 1.15.0 because it compressed
+        # the scores. Advertising it in the docs would be both stale and
+        # backwards -- this is the check that caught it still being described.
+        # Scoped to the descriptive part: the changelog legitimately describes
+        # removing this apparatus, so scanning the whole file would fail on the
+        # very entry that records the fix. Same trap as the literal-string
+        # frequency guard below -- the check has to look where the claim lives.
+        descriptive = body.split("## 版本")[0]
+        leftovers = [phrase for phrase in ("Band 锚点", "虚高信号自查表", "防虚高校准")
+                     if phrase in descriptive]
+        check(not leftovers,
+              "%s does not advertise the removed calibration apparatus (%s)"
+              % (name, "; ".join(leftovers) if leftovers else "none"))
+
     print("\n[13] release metadata: one version, stated consistently")
     front = open(os.path.join(ROOT, "SKILL.md"), encoding="utf-8").read()
     version_match = re.search(r'^\s*version:\s*"([^"]+)"', front, re.MULTILINE)
