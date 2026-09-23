@@ -1139,6 +1139,18 @@ def main():
         check("不要在评分时加载" in evidence or "不要在打分时加载" in evidence,
               "the evidence file says it must not be loaded while scoring")
 
+    # The release-note template is the pitch. Leading it with the band estimate
+    # advertises the one number this bundle measured to be its weakest (about
+    # half a band of error), so the ordering is asserted rather than left to
+    # editorial drift: the report comes first, and the score is introduced with
+    # its interval and its error attached.
+    releasing = open(os.path.join(ROOT, "RELEASING.md"), encoding="utf-8").read()
+    template = releasing.split("## 5. 可以直接复制的发布说明", 1)[-1]
+    check("分数请当成区间读" in template and "平均误差约半个档位" in template,
+          "the release-note template introduces the score with its interval and error")
+    check("四项分项预估分" not in template,
+          "the release-note template does not lead with the band estimate")
+
     print("\n[13] release metadata: one version, stated consistently")
     front = open(os.path.join(ROOT, "SKILL.md"), encoding="utf-8").read()
     version_match = re.search(r'^\s*version:\s*"([^"]+)"', front, re.MULTILINE)
