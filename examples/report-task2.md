@@ -14,13 +14,21 @@
 
 ## 分数卡
 
-| 项目 | 预估分 | 一句话依据（含原文引用） |
-|---|---|---|
-| Task Response | 6.0 | 三个问题部分都回应了（¶2 讨论 A、¶3 讨论 B、¶4 给出观点），但立场只在 ¶4 出现，¶1 结尾是 "This essay will discuss both sides"，属于"立场未贯穿全文"；6 个主体论点中 4 个是裸断言（如 "it can make the country develop faster"） |
-| Coherence & Cohesion | 6.0 | 五段结构清晰、每段有明确中心句（"On the one hand, free university education has many advantages."），但 20 句用掉 13 个连接词（0.65/句），且 ¶4 的 "However" 用成了递进而非转折 |
-| Lexical Resource | 6.0 | 零拼写错误，有 "reduce the gap between the rich and the poor" 这类可圈可点的表达；但 `education` 重复 8 次、`free`/`students`/`university` 各 6 次而无替换，且搭配错误频出（"pay attention on"、"get the knowledge"、"have a lot of pressure"） |
-| Grammatical Range & Accuracy | 5.5 | 复杂结构只用到 if/although/because 状语从句（无关系从句、无被动、无名词化）；错误密度过高（16 处/20 句），且**复杂句恰恰是出错集中区**（"If the government pay"、"Although ..., but ..."、"such as build roads"）——这是 5 分档 "复杂句比简单句更不准确" 的典型特征 |
-| **总分** | **6.0** | 四项均值 5.875 → 四舍五入到最近 0.5 → **6.0** |
+> ⚠️ **这是位置估计，不是精确成绩。** 本工具的绝对分**典型误差约半个档位**
+> （24 篇真实作文实测平均绝对误差 0.48），所以每项给**区间**。
+> `中点` 一列只为跨篇比较与追踪而存在，**不代表精确到 0.5 档**。
+
+| 项目 | 预估区间 | 中点 | 一句话依据（含原文引用） |
+|---|---|---|---|
+| Task Response | 5.5–6.5 | 6.0 | 三个问题部分都回应了（¶2 讨论 A、¶3 讨论 B、¶4 给出观点），但立场只在 ¶4 出现，¶1 结尾是 "This essay will discuss both sides"，属于"立场未贯穿全文"；6 个主体论点中 4 个是裸断言（如 "it can make the country develop faster"） |
+| Coherence & Cohesion | 5.5–6.5 | 6.0 | 五段结构清晰、每段有明确中心句（"On the one hand, free university education has many advantages."），但 20 句用掉 13 个连接词（0.65/句），且 ¶4 的 "However" 用成了递进而非转折 |
+| Lexical Resource | 5.5–6.5 | 6.0 | 零拼写错误，有 "reduce the gap between the rich and the poor" 这类可圈可点的表达；但 `education` 重复 8 次、`free`/`students`/`university` 各 6 次而无替换，且搭配错误频出（"pay attention on"、"get the knowledge"、"have a lot of pressure"） |
+| Grammatical Range & Accuracy | 5.0–6.0 | 5.5 | 复杂结构只用到 if/although/because 状语从句（无关系从句、无被动、无名词化）；错误密度过高（16 处/20 句），且**复杂句恰恰是出错集中区**（"If the government pay"、"Although ..., but ..."、"such as build roads"）——这是 5 分档 "复杂句比简单句更不准确" 的典型特征 |
+| **整体位置** | **5.0–6.5** | **6.0** | 四项区间叠加；四项中点均值 5.875 → **6.0**。**不给单点总分** |
+
+**最弱项**：Grammatical Range & Accuracy —— 错误密度 16 处/20 句，且复杂句是出错集中区。
+
+**距上一档差的一件事**：把 ¶2、¶3 里 4 处裸断言各补成一条因果链（见 `## 句子升级` 第 2 组）。
 
 **客观数据**：259 词（要求 ≥250，✅ 达标，但仅高出 9 词）｜ 5 段 ｜ 20 句 ｜ 平均句长 12.9 词 ｜ 无 >35 词长句 ｜ 段落词数 43/70/72/50/24 ｜ TTR 0.475 ｜ 连接词 13 个（0.65/句）｜ 被动语态 0 处
 

@@ -4,7 +4,7 @@ description: "Use when the user wants an IELTS essay corrected, graded, scored, 
 whenToUse: "Load when the user submits an IELTS writing task, prompt, or essay and wants scoring, correction, feedback, or an improved version. Also load when the user asks for an IELTS writing practice plan, model answer, or a review of a previous correction."
 license: MIT
 metadata:
-  version: "1.15.0"
+  version: "1.16.0"
   license: MIT
   requires: "Python 3.8+ (standard library only)"
   updated: "2026-09-20"
@@ -12,7 +12,7 @@ metadata:
 
 # IELTS Writing Coach — 雅思作文批改
 
-对雅思写作 Task 1 / Task 2 做**可复核、有证据、可执行**的批改：给出四项分项预估分与总分、逐句错误定位、定向改写、以及一份可分享的 Markdown 报告。
+对雅思写作 Task 1 / Task 2 做**可复核、有证据、可执行**的批改：给出四项的档位区间与位置、最弱项与下一步、逐句错误定位、定向改写、以及一份可分享的 Markdown 报告。
 
 ## 0. 核心原则（不可违背）
 
@@ -89,7 +89,12 @@ python3 scripts/analyze_essay.py <essay-file> --task 2 \
 - **Task 2**：Task Response (TR) / Coherence and Cohesion (CC) / Lexical Resource (LR) / Grammatical Range and Accuracy (GRA)
 - **Task 1**：Task Achievement (TA) / CC / LR / GRA
 
-总分 = 四项平均，**四舍五入到最近的 0.5**；恰好 .25 上进到 .5，恰好 .75 上进到下一个整分（例：6.5+7.0+6.0+6.5=26.0/4=6.5；6.5+6.5+6.5+7.0=26.5/4=6.625→6.5；7.0+7.0+6.5+7.5=28/4=7.0）。
+**位置（中点）** = 四项平均，**四舍五入到最近的 0.5**；恰好 .25 上进到 .5，恰好 .75 上进到下一个整分
+（例：6.5+7.0+6.0+6.5=26.0/4=6.5；6.5+6.5+6.5+7.0=26.5/4=6.625→6.5；7.0+7.0+6.5+7.5=28/4=7.0）。
+
+**报告里给区间，不给单点总分。** 每项的区间 = 中点 ± 0.5，整体位置 = 四项区间的并集。
+区间宽度固定，反映的是**工具的输出精度**（实测平均绝对误差 0.48），不是你对这一篇的把握——
+所以不要因为"这篇我有把握"就收窄它。中点只用于跨篇追踪与比较。
 
 每项打分必须走完"判定三问"，并在报告中写出：
 
@@ -150,7 +155,10 @@ TA-OVER 缺概述 | TA-DATA 数据误读/错报 | TA-FEAT 关键特征遗漏
 
 ### Step 5 — 输出报告
 
-按 `templates/report-template.md` 生成报告，写入文件（默认 `<workspace>/ielts-reports/<日期>-<任务类型>.md`），并在对话里给出**精简摘要**（分数卡 + 前三条最优先改进）。
+按 `templates/report-template.md` 生成报告，写入文件（默认 `<workspace>/ielts-reports/<日期>-<任务类型>.md`），并在对话里给出**精简摘要**（位置区间 + 最弱项 + 前三件最优先改进）。
+
+**对话里不要只报一个总分。** 说「这篇大致在 5.5–6.5」而不是「6.0 分」——理由是实测误差约半个档位，
+单一数字会让它看起来比实际确定（测量见 `references/calibration-evidence.md`，但**不要在打分时加载那份文件**）。
 
 报告是交付物：写完必须调用 `present` 让用户能直接打开分享。
 
@@ -246,13 +254,16 @@ python3 scripts/track_progress.py <workspace>/ielts-reports --out <workspace>/ie
 （当前水平 + 最关键的 1 个瓶颈 + 提分最快的一步）
 
 ## 分数卡
-| 项目 | 预估分 | 一句话依据 |
-|---|---|---|
-| Task Response | 6.0 | 立场清楚，但两个主体段都停在断言，无例证 |
-| Coherence & Cohesion | 6.5 | 分段合理，连接词偏机械（Moreover 出现 5 次） |
-| Lexical Resource | 6.0 | 搭配错误 4 处（make a progress…） |
-| Grammatical Range & Accuracy | 5.5 | 复杂句 7 处出错，主谓一致 3 处 |
-| **总分** | **6.0** | 四项均值 6.0 |
+| 项目 | 预估区间 | 中点 | 一句话依据 |
+|---|---|---|---|
+| Task Response | 5.5–6.5 | 6.0 | 立场清楚，但两个主体段都停在断言，无例证 |
+| Coherence & Cohesion | 6.0–6.5 | 6.5 | 分段合理，连接词偏机械（Moreover 出现 5 次） |
+| Lexical Resource | 5.5–6.5 | 6.0 | 搭配错误 4 处（make a progress…） |
+| Grammatical Range & Accuracy | 5.0–6.0 | 5.5 | 复杂句 7 处出错，主谓一致 3 处 |
+| **整体位置** | **5.0–6.5** | **6.0** | 四项区间叠加；不给单点总分 |
+
+**最弱项**：Grammatical Range & Accuracy —— 复杂句是出错集中区（引用原文）
+**距上一档差的一件事**：（一个可执行动作）
 
 ## 逐项诊断
 ### Task Response — 6.0（门槛 / 证据 / 差什么）

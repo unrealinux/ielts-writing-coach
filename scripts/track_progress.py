@@ -27,15 +27,11 @@ import os
 import re
 import sys
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import report_format  # noqa: E402  — 分数卡的唯一解析实现，与 report_to_docx 共用
+
 # --- Score card -----------------------------------------------------------------
 
-CRITERIA = [
-    ("TR", [r"task\s*response", r"task\s*achievement", r"\bTR\b", r"\bTA\b", r"任务回应", r"任务达成"]),
-    ("CC", [r"coherence", r"\bCC\b", r"连贯"]),
-    ("LR", [r"lexical", r"\bLR\b", r"词汇"]),
-    ("GRA", [r"grammatical", r"\bGRA\b", r"语法"]),
-]
-OVERALL_PATTERNS = [r"总分", r"overall", r"总成绩", r"总体"]
 
 CRITERION_LABEL = {"TR": "TR/TA", "CC": "CC", "LR": "LR", "GRA": "GRA"}
 CRITERION_FULL = {
@@ -101,24 +97,6 @@ def table_rows(block):
         yield cells
 
 
-def parse_score(value):
-    match = re.search(r"\d+(?:\.\d+)?", value.replace("*", ""))
-    if not match:
-        return None
-    score = float(match.group(0))
-    if not 0 < score <= 9:
-        return None
-    return score
-
-
-def match_criterion(label):
-    for key, patterns in CRITERIA:
-        for pattern in patterns:
-            if re.search(pattern, label, re.IGNORECASE):
-                return key
-    return None
-
-
 def parse_score_card(text):
     """Extract the four criteria and the overall band from a report.
 
@@ -126,38 +104,24 @@ def parse_score_card(text):
     document would let an aggregate document (a comparison table that happens to
     list four criterion scores) masquerade as a correction report, which is worse
     than skipping the file: it would silently inject invented history.
+
+    The section is read by `report_format.read_score_card`, shared with
+    `report_to_docx.py`, so the two can never disagree about what a report says.
+    That module locates the score column by its header, because the card now
+    carries a range (`5.5-6.5`) next to the tracking midpoint and a positional
+    reader would take the lower bound as the score.
     """
-    block = find_section(text, [r"分数卡", r"评分卡", r"score\s*card"])
-    if not block:
+    card = report_format.read_score_card(text)
+    if card is None:
         return None
-
-    scores = {}
-    overall = None
-    for cells in table_rows(block):
-        if len(cells) < 2:
-            continue
-        label = cells[0].replace("*", "").strip()
-        is_overall = any(re.search(pattern, label, re.IGNORECASE)
-                         for pattern in OVERALL_PATTERNS)
-        key = None if is_overall else match_criterion(label)
-        if key is None and not is_overall:
-            continue
-        score = parse_score(cells[1])
-        if score is None:
-            # A criterion row whose score cell is not a number means this is not
-            # a score card, so the whole section is rejected.
-            return None
-        if is_overall:
-            if overall is None:
-                overall = score
-        elif key not in scores:
-            scores[key] = score
-
+    scores = card["scores"]
     if len(scores) < 4:
         return None
+    overall = card["overall"]
     if overall is None:
         overall = round_band(sum(scores.values()) / 4.0)
-    return {"criteria": scores, "overall": overall}
+    return {"criteria": scores, "overall": overall,
+            "ranges": card["ranges"], "uses_range": card["uses_range"]}
 
 
 def parse_error_codes(text):
@@ -240,6 +204,10 @@ def parse_report(path):
         "criteria": card["criteria"],
         "overall": card["overall"],
         "total": round(sum(card["criteria"].values()), 2),
+        # Carried through so the trend can say out loud that the numbers are
+        # interval midpoints. Dropping it here was why the note did not appear.
+        "ranges": card.get("ranges", {}),
+        "uses_range": card.get("uses_range", False),
         "codes": parse_error_codes(text),
     }
 
@@ -409,6 +377,13 @@ def render_markdown(summary, min_reports):
     add("")
 
     add("## 1. 分项趋势\n")
+    # Reports written after the range layout carry an interval per criterion. The
+    # table has to stay numeric for the arithmetic below, so the numbers are the
+    # midpoints -- and the reader is told so rather than left to assume the
+    # report claimed a single score.
+    if any(report.get("uses_range") for report in summary["reports"]):
+        add("> 报告用的是**区间**格式；下表的数字是各区间**中点**（追踪需要可比数值，"
+            "不代表报告给的是单点分数）。区间见各报告的 `## 分数卡`。\n")
     add("| 日期 | 任务 | 词数 | TR/TA | CC | LR | GRA | 总分 | 文件 |")
     add("|---|---|---|---|---|---|---|---|---|")
     for report in summary["reports"]:

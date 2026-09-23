@@ -32,6 +32,9 @@ import re
 import sys
 import zipfile
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import report_format  # noqa: E402  — 分数卡的唯一解析实现，与 track_progress 共用
+
 try:
     import xml.etree.ElementTree as ET
 except ImportError:  # pragma: no cover
@@ -211,33 +214,24 @@ def table_rows(block):
 
 
 def parse_score_card(text):
-    block = find_section(text, [r"分数卡", r"评分卡", r"score\s*card"])
-    if not block:
+    """Read the score card via the shared parser.
+
+    Shared with track_progress.py so the two cannot disagree about what a report
+    says, and header-driven because the card now carries a range (`5.5-6.5`)
+    beside the tracking midpoint -- a positional reader would take the lower
+    bound as the score, and would do it without any error.
+    """
+    card = report_format.read_score_card(text)
+    if card is None:
         return None
-    scores = {}
-    reasons = {}
-    overall = None
-    overall_note = ""
-    for cells in table_rows(block):
-        if len(cells) < 2:
-            continue
-        label = clean_markdown(cells[0])
-        if re.search(r"总分|overall|总成绩", label, re.IGNORECASE):
-            if overall is None:
-                number = re.search(r"\d+(?:\.\d+)?", cells[1])
-                overall = number.group(0) if number else None
-                overall_note = clean_markdown(cells[2]) if len(cells) > 2 else ""
-            continue
-        for key, pattern in CRITERIA_PATTERNS:
-            if key in scores or not re.search(pattern, label, re.IGNORECASE):
-                continue
-            number = re.search(r"\d+(?:\.\d+)?", cells[1])
-            if number:
-                scores[key] = number.group(0)
-                reasons[key] = clean_markdown(cells[2]) if len(cells) > 2 else ""
-    if len(scores) < 4:
-        return None
-    return {"scores": scores, "reasons": reasons, "overall": overall, "overall_note": overall_note}
+    return {
+        "scores": {key: ("%g" % value) for key, value in card["scores"].items()},
+        "reasons": card["reasons"],
+        "ranges": card["ranges"],
+        "overall": ("%g" % card["overall"]) if card["overall"] is not None else None,
+        "overall_note": card["overall_note"],
+        "overall_range": card["overall_range"],
+    }
 
 
 def parse_error_list(text):
@@ -787,7 +781,10 @@ def build_reviewed_docx(essay_text, report_text, out_path, title=None):
     body.append(paragraph(run(heading, bold=True, size=32), spacing_after=120, outline=0))
     subtitle = " ｜ ".join(part for part in [
         meta["date"], meta["task"],
-        ("预估分 " + card["overall"]) if card and card.get("overall") else "",
+        # The card may carry a range. Leading with it instead of the midpoint
+        # keeps the header from claiming a precision the tool does not have.
+        ("位置 " + card["overall_range"]) if card and card.get("overall_range")
+        else (("预估分 " + card["overall"]) if card and card.get("overall") else ""),
     ] if part)
     if subtitle:
         body.append(paragraph(run(subtitle, size=20, color="7F7F7F"), spacing_after=80))
@@ -811,11 +808,32 @@ def build_reviewed_docx(essay_text, report_text, out_path, title=None):
                               size=18, italic=True, color="7F7F7F"), spacing_after=200))
 
     if card:
-        rows = [["项目", "预估分", "依据"]]
+        # The card may carry a range per criterion. Showing the midpoint alone
+        # under a column called "预估分" would claim a precision the tool does
+        # not have, so the range leads and the midpoint is labelled as the
+        # tracking value.
+        has_range = bool(card.get("ranges")) or bool(card.get("overall_range"))
+        rows = [["项目", "位置（区间）", "依据"]]
         for key in CRITERIA_ORDER:
-            rows.append([CRITERIA_FULL[key], card["scores"][key], card["reasons"].get(key, "")])
-        rows.append(["总分", card.get("overall") or "—", card.get("overall_note", "")])
-        body.append(table(rows, [2400, 1100, 5460]))
+            span = (card.get("ranges") or {}).get(key) or ""
+            midpoint = card["scores"].get(key)
+            if span and midpoint:
+                value = "%s（中点 %s）" % (span, midpoint)
+            else:
+                value = span or (midpoint if midpoint else "—")
+            rows.append([CRITERIA_FULL[key], value, card["reasons"].get(key, "")])
+        overall_range = card.get("overall_range") or ""
+        overall_midpoint = card.get("overall") or ""
+        if overall_range and overall_midpoint:
+            overall_value = "%s（中点 %s）" % (overall_range, overall_midpoint)
+        else:
+            overall_value = overall_range or overall_midpoint or "—"
+        note = card.get("overall_note", "")
+        if has_range:
+            note = (note + "　" if note else "") + \
+                "区间 = 中点 ± 0.5，反映工具的输出精度；不给单点总分。"
+        rows.append(["整体位置", overall_value, note])
+        body.append(table(rows, [2400, 2100, 4460]))
 
     anchored = [error for error in errors if not error.get("unanchored")]
     unanchored = [error for error in errors if error.get("unanchored")]

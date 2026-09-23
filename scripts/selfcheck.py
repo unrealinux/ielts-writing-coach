@@ -474,6 +474,62 @@ def main():
                 stdout=subprocess.PIPE, stderr=subprocess.PIPE,
             )
 
+        def write_range_report(directory, name, date, midpoints):
+            """The current card layout: a range column beside the midpoint.
+
+            The trap this exists for: a reader that takes "the first number in
+            column 2" reads `5.5-6.5` as 5.5 -- the lower bound -- and reports it
+            as the essay's score with no error at all. Both readers now locate
+            the column by its header, so this asserts the midpoint is what comes
+            out, and that a report in the new layout is still recognised.
+            """
+            os.makedirs(directory, exist_ok=True)
+            rows = "\n".join("| %s | %s | %s | synthetic |" % (label, span, mid)
+                              for label, span, mid in midpoints)
+            body = ("# IELTS Writing 批改报告\n\n"
+                    "> **预估分，非官方成绩** ｜ Task 2 ｜ %s\n\n"
+                    "## 分数卡\n\n"
+                    "| 项目 | 预估区间 | 中点 | 一句话依据 |\n"
+                    "|---|---|---|---|\n%s\n\n" % (date, rows))
+            with open(os.path.join(directory, name), "w", encoding="utf-8") as handle:
+                handle.write(body)
+
+        ranged = os.path.join(workdir, "ranged", "ielts-reports")
+        write_range_report(ranged, "2026-02-01-task2.md", "2026-02-01", (
+            ("Task Response", "5.5–6.5", "6.0"),
+            ("Coherence & Cohesion", "6.0–7.0", "6.5"),
+            ("Lexical Resource", "5.5–6.5", "6.0"),
+            ("Grammatical Range & Accuracy", "5.0–6.0", "5.5"),
+            ("**整体位置**", "**5.0–7.0**", "**6.0**"),
+        ))
+        result = run_tracker(ranged)
+        check(result.returncode == 0, "the tracker runs on a report using the range layout")
+        if result.returncode == 0:
+            data = json.loads(result.stdout.decode("utf-8"))
+            check(data["count"] == 1,
+                  "a range-layout report is recognised as a report (%d read)" % data["count"])
+            if data["count"] == 1:
+                latest = data["reports"][0]
+                criteria = latest.get("criteria") or {}
+                # TR's midpoint is 6.0 and its lower bound is 5.5; reading the
+                # latter as the score is the specific misread to prevent.
+                check(criteria.get("TR") == 6.0,
+                      "the range is not read as its lower bound (TR=%s, want 6.0)"
+                      % criteria.get("TR"))
+                check(abs(float(latest["overall"]) - 6.0) < 0.01,
+                      "the overall uses the stated midpoint (%s)" % latest["overall"])
+            # The trend table has to stay numeric for its arithmetic, so its
+            # numbers are midpoints. Saying so is not decoration: without it a
+            # reader takes them as the scores the report gave. The flag was
+            # dropped once between the parser and the summary, and the note
+            # vanished with no test noticing -- hence this check.
+            rendered = subprocess.run(
+                [sys.executable, tracker, ranged],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+            ).stdout.decode("utf-8")
+            check("中点" in rendered and "区间" in rendered,
+                  "the trend discloses that its numbers are interval midpoints")
+
         dated = os.path.join(workdir, "dated", "ielts-reports")
         write_report(dated, "2026-01-01-task2.md", "2026-01-01", 6.0, 6.0, 6.0, 6.0, 3, 2)
         write_report(dated, "2026-02-01-task2.md", "2026-02-01", 6.5, 6.5, 6.0, 6.5, 1, 1)
@@ -657,6 +713,27 @@ def main():
         check(rejected.returncode == 1, "the validator rejects a truncated package")
     finally:
         shutil.rmtree(docx_dir, ignore_errors=True)
+
+    print("\n[8b] the shipped example presents a position, not a single score")
+    # Measured error is about half a band, so a report that leads with one total
+    # claims a precision the tool does not have. The example is what people read
+    # first, so it is asserted directly rather than trusted to stay in step with
+    # the template.
+    example_docx = os.path.join(ROOT, "examples", "reviewed-task2.docx")
+    if os.path.isfile(example_docx):
+        with zipfile.ZipFile(example_docx) as archive:
+            page = re.sub(r"<[^>]+>", "", archive.read("word/document.xml").decode("utf-8"))
+        check("位置（区间）" in page,
+              "the example's score page labels the column as a range")
+        check(re.search(r"\d(?:\.\d)?\s*[–~-]\s*\d(?:\.\d)?", page) is not None,
+              "the example states an actual range")
+        check(not re.search(r"预估分\s*\d", page),
+              "the example never states a bare estimated score")
+        # `总分` on its own is not the problem -- the example's own note says
+        # "不给单点总分". What the old layout rendered was `总分6`: a total with a
+        # number attached, which is the claim being removed.
+        check("整体位置" in page and not re.search(r"总分\s*\d", page),
+              "the example's overall row is a position, not a numbered total")
 
     print("\n[9] analyzer Task 1 mode: overview, mechanical listing, tense")
     t1_dir = tempfile.mkdtemp(prefix="ielts-t1-")
@@ -1032,9 +1109,14 @@ def main():
           % ("; ".join(remnants) if remnants else "none"))
 
     # An unsourced distributional claim is a prior the reader cannot check, and
-    # it installs a default band before any evidence is weighed.
-    phrases = ("绝大多数", "最常见", "最常出现", "罕见", "大多数考生", "5.0–6.5", "5.0-6.5")
-    found = [phrase for phrase in phrases if phrase in scoring_path]
+    # it installs a default band before any evidence is weighed. The patterns
+    # describe *claims* rather than any occurrence of a band range: the report
+    # template legitimately contains example ranges like 5.0-6.5, and an earlier
+    # version of this check flagged those, which is a guard testing the wrong
+    # thing.
+    patterns = (r"绝大多数", r"最常见", r"最常出现", r"罕见", r"大多数考生",
+                r"多数考生", r"典型考生", r"落在\s*\**\d", r"集中在\s*\**\d")
+    found = [pattern for pattern in patterns if re.search(pattern, scoring_path)]
     check(not found,
           "the scoring path states no unsourced frequency claim (%s)"
           % ("; ".join(found) if found else "none"))
