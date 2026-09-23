@@ -146,9 +146,42 @@ open /tmp/ql/reviewed-task2.docx.png
 
 | 平台类型 | 需要什么 | 本项目现状 |
 |---|---|---|
-| `npx skills add <owner>/<repo>` 类安装器 | 公开仓库，且 skill 目录在仓库里 | ✅ 已满足——`<name>/SKILL.md` 的目录形状正确 |
+| `npx skills add <owner>/<repo>` 类安装器 | 公开仓库，且仓库里能定位到 `SKILL.md` | ⚠️ **仓库形状与 zip 形状不同，见下** |
 | skill 市场（按仓库索引） | 公开仓库 + 清晰的 README | ✅ README 已备 |
 | 需要 manifest 的市场 | 通常要 `manifest.json` 或 `.claude-plugin/marketplace.json` | ❌ 未提供——**按目标市场的格式要求再补**，不要凭空造一个格式 |
+
+### 3.1 仓库形状 ≠ zip 形状（这一条以前写错过）
+
+| | 形状 |
+|---|---|
+| **发布 zip** | `ielts-writing-coach/SKILL.md` —— 因为用 `git archive --prefix=ielts-writing-coach/` 打的 |
+| **git 仓库** | `SKILL.md` 在**仓库根**，没有 `ielts-writing-coach/` 这一层 |
+
+这两者**不等价**，而本文件以前只写「`<name>/SKILL.md` 的目录形状正确」——那描述的是 zip，
+却被当成了仓库的凭据。安装器读的是**仓库**，所以这句话当时是**没验证过的推断**。
+
+**已核实的部分**（2026-09-23）：`npx skills`（v1.7.0，来自 `vercel-labs/skills`）能把
+`unrealinux/ielts-writing-coach` **解析为合法来源**：
+
+```
+◇  Source: https://github.com/unrealinux/ielts-writing-coach.git
+```
+
+它的 `init` 帮助也写明支持两种形状（`creates <name>/SKILL.md or ./SKILL.md`），
+所以仓库根放 `SKILL.md` 是**被支持的形状之一**。
+
+**未核实的部分**：本机到 github.com 的 **HTTPS** 连接不稳定（`git clone` 报
+`Failed to connect to github.com port 443`、npm 也超时），所以**端到端安装没有跑完**。
+「形状正确」目前仍是**基于工具文档与来源解析的推断，不是实测通过的安装**。
+
+**要真正验证**（在任意一台网络正常的机器上，一条命令）：
+
+```bash
+npx skills add unrealinux/ielts-writing-coach --list   # 只列出，不安装
+```
+
+能列出 `ielts-writing-coach` 即证明形状可用；列出为空或报错，则把仓库改成
+`<name>/SKILL.md` 子目录结构（同时要改 `git archive --prefix`，否则 zip 会多一层）。
 
 **关于 manifest**：本项目刻意**没有**预先创建 manifest，因为：
 
@@ -158,7 +191,7 @@ open /tmp/ql/reviewed-task2.docx.png
 
 ---
 
-## 4. 发出去之前，最后确认这 8 件事
+## 4. 发出去之前，最后确认这 9 件事
 
 ```
 □ python3 scripts/selfcheck.py 全绿
@@ -168,6 +201,7 @@ open /tmp/ql/reviewed-task2.docx.png
 □ git status 干净（`git archive` 只打已提交内容，脏工作区会静默少文件）
 □ 版本号 tag 与 zip 文件名一致，zip 由 `git archive` 打在 tag 上（见 2.3）
 □ 解压发布的那个包，在里面再跑一次 selfcheck
+□ 首次发布或改过目录结构时，在**网络正常**的机器上跑 `npx skills add <owner>/<repo> --list`（见 3.1）
 □ 发布说明里写清：分数是预估不是官方评分；不读图表图片；阈值是少量样本校准的
 ```
 
