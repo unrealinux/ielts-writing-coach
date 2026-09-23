@@ -206,7 +206,7 @@ python3 scripts/track_progress.py ~/ielts-reports --out ~/ielts-reports/_趋势.
 三套验证，都能独立复现：
 
 ```bash
-python3 scripts/selfcheck.py              # 自检 **215** 项：格式、解析、聚合、docx 结构与幂等性
+python3 scripts/selfcheck.py              # 自检 **216** 项：格式、解析、聚合、docx 结构与幂等性
                                           # 内含 CI 承诺一致性（矩阵起点 = 声明的 3.8+、脚本路径存在）
 python3 scripts/check_stdlib_only.py      # 断言所有脚本只 import 标准库
 textutil -info out.docx                   # macOS 独立 OOXML 实现能否读取（可选）

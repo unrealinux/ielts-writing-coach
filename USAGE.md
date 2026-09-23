@@ -431,7 +431,7 @@ unzip ielts-writing-coach-skill-v1.16.2.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **215 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
+会跑 **216 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 

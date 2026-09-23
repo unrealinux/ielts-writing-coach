@@ -1150,6 +1150,19 @@ def main():
           "the release-note template introduces the score with its interval and error")
     check("四项分项预估分" not in template,
           "the release-note template does not lead with the band estimate")
+    # The suggested repository description is the same pitch in one line, and it
+    # was the last place still leading with the score after the READMEs were
+    # fixed. GitHub's copy of it lives in repository metadata and cannot be
+    # checked from here, but the suggestion can.
+    # Only the fenced block -- the surrounding prose explains that the old
+    # wording led with the score, and quoting it there tripped the first version
+    # of this check. Fourth time in this file that a guard matched the text
+    # describing a thing instead of the thing.
+    section = releasing.split("### 2.4 仓库描述建议", 1)[-1].split("\n### ", 1)[0]
+    blocks = re.findall(r"```[a-z]*\n(.*?)```", section, re.S)
+    suggestion = " ".join(blocks)
+    check(suggestion and "四项评分" not in suggestion and "逐句证据" in suggestion,
+          "the suggested repository description leads with the report, not the score")
 
     # Same repositioning at the front door. The READMEs are what most people
     # read first, and leading with the band estimate advertises the one number
