@@ -379,7 +379,7 @@ shasum -a 256 /tmp/走查.docx examples/reviewed-task2.docx     # 应完全相�
 python3 scripts/track_progress.py ~/ielts-reports
 
 # 改完任何东西，跑全量自检
-python3 scripts/selfcheck.py        # 216 项
+python3 scripts/selfcheck.py        # 221 项
 ```
 
 ---

@@ -1,6 +1,6 @@
 # 使用说明
 
-> `ielts-writing-coach` v1.16.2 ｜ 面向使用者，不假设你懂代码或看过源码。
+> `ielts-writing-coach` v1.17.0 ｜ 面向使用者，不假设你懂代码或看过源码。
 > **想看一遍完整的真实走查，直接读 [`USAGE-EXAMPLE.md`](USAGE-EXAMPLE.md)**——
 > 一篇作文从贴进对话到拿到报告与批改稿，每一步都有实际输出。
 > 想了解设计原理与竞品对比，看 `README.md`；想改这个 skill，看 `SKILL.md`；
@@ -27,6 +27,11 @@
 **唯一必须给齐的是「题目」和「作文」。** 没给题目时，工具**不会**评 Task Response / Task Achievement——因为跑题无法从作文本身看出来，猜一个分数比不评更糟。
 
 ---
+
+
+> **哪里不对、或者装不上？** 告诉我。最有用的三件事：**装的时候卡在哪**、
+> **哪一处扣分你不同意**（引用它说的那句）、**它漏了什么**你或老师指出的问题。
+> 有 GitHub 账号可以开 issue（模板已备好）；没有就直接说一句也行。
 
 ## 1. 你需要准备什么
 
@@ -420,7 +425,7 @@ python3 scripts/calibrate.py ~/ielts-calibration
 > 数字是扫描优先级（越小越先）。项目级优先于用户级，所以项目里放一份能覆盖用户级那份。
 
 ```bash
-unzip ielts-writing-coach-skill-v1.16.2.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-v1.17.0.zip -d ~/.agents/skills/
 ```
 
 **装好后无需重启**——运行中的 harness 会监视 skill 根目录，新增或修改会在下一个模型步骤自动进入目录。
@@ -431,7 +436,7 @@ unzip ielts-writing-coach-skill-v1.16.2.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **216 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
+会跑 **221 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 

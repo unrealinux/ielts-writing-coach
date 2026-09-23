@@ -31,6 +31,7 @@ REQUIRED_FILES = [
     "NOTICE.md",
     ".gitignore",
     ".github/workflows/selfcheck.yml",
+    ".github/ISSUE_TEMPLATE/trial.md",
     "examples/README.md",
     "examples/report-task2.md",
     "examples/reviewed-task2.docx",
@@ -1522,6 +1523,29 @@ def main():
     check(not missing_roots,
           "every user-facing install table lists all four default roots (%s)"
           % ("; ".join(missing_roots) or "all present"))
+
+    # "Publishing" and "someone actually using it" are different problems. Before
+    # this, the bundle had no feedback path at all: a stranger who tried it and
+    # hit a problem had nowhere to say so, and the one part of the chain that has
+    # never been verified externally -- installation -- was the part most likely
+    # to break. The trial kit is asserted rather than assumed, because an
+    # invitation that asks the wrong question produces reports nobody can act on.
+    trial = open(os.path.join(ROOT, "RELEASING.md"), encoding="utf-8").read()
+    invitation = trial.split("## 7. 怎么请人试用", 1)[-1]
+    check(bool(invitation.strip()),
+          "the release guide says how to invite a trial")
+    # The ask has to be specific enough to become a fix. "Did it work?" is not.
+    asks = ("装的时候卡在哪", "哪一处扣分你不同意", "漏了什么")
+    absent_asks = [phrase for phrase in asks if phrase not in invitation]
+    check(not absent_asks,
+          "the trial ask names what to report (%s)"
+          % ("; ".join(absent_asks) if absent_asks else "all present"))
+    # And the invitation must carry the limits, or a trier judges it as a scorer
+    # -- the one thing the measurements say it is worst at.
+    check("别拿它估分" in invitation or "别拿它估分" in invitation.replace("\n", ""),
+          "the invitation tells the trier not to read it as a score estimator")
+    check(os.path.isfile(os.path.join(ROOT, ".github", "ISSUE_TEMPLATE", "trial.md")),
+          "an issue template exists for triers who have a GitHub account")
 
     # A coverage number written in prose rots the moment a check is added; this
     # bundle got it wrong four times. Declaring it is only safe when something
