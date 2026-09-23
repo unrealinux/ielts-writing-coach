@@ -9,7 +9,7 @@ it, as an interval rather than a single number (see below).
 
 Zero dependencies (Python standard library only), offline, and byte-reproducible.
 
-**Version 1.17.0**
+**Version 1.17.1**
 
 ---
 
@@ -61,8 +61,8 @@ report.
 ## Install
 
 ```bash
-unzip ielts-writing-coach-skill-v1.17.0.zip -d ~/.agents/skills/
-python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 221 checks
+unzip ielts-writing-coach-skill-v1.17.1.zip -d ~/.agents/skills/
+python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 222 checks
 ```
 
 Or clone into the same place:
@@ -119,7 +119,7 @@ judge the output without running anything.
 
 | | |
 |---|---|
-| **221 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
+| **222 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
 | **19 evaluation cases** | grammar-error, empty-argument, off-topic, Task 1 chart, GT letter |
 | **Independent DOCX readers** | macOS `textutil` parses it; `qlmanage` **renders** it through Apple's layout engine |
 | **CI** | self-check runs on Python 3.8 – 3.13, plus a guard that fails if any script imports anything outside the standard library |

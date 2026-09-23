@@ -1547,6 +1547,24 @@ def main():
     check(os.path.isfile(os.path.join(ROOT, ".github", "ISSUE_TEMPLATE", "trial.md")),
           "an issue template exists for triers who have a GitHub account")
 
+    # A reader who counts will find 24 changelog entries and 10 tags. The gap is
+    # legitimate (pre-repository development, and one version shipped inside the
+    # next), but unexplained it reads as lost releases. Asserted so the
+    # explanation cannot be quietly dropped.
+    changelog = open(os.path.join(ROOT, "README.md"), encoding="utf-8").read()
+    history = changelog.split("## 版本", 1)[-1]
+    # Only the preamble, before the first entry: the 1.17.1 entry quotes the same
+    # sentence while describing the note, so scanning the section passed even
+    # after the note itself was deleted. Fifth time in this file that a guard
+    # matched text *about* the thing rather than the thing -- the recurrence is
+    # the lesson, not the individual lapses.
+    # Split on a line-initial "- **" (the entries). Splitting on "- **" alone cut
+    # at the note's own "> - **v1.12.0 之前**" bullet and dropped the second line
+    # of the note, so the check failed on the file that was correct.
+    preamble = re.split(r"\n- \*\*", history, maxsplit=1)[0]
+    check("只有 10 个 tag" in preamble and "并入了 v1.16.0" in preamble,
+          "the changelog explains why some versions have no tag or release")
+
     # A coverage number written in prose rots the moment a check is added; this
     # bundle got it wrong four times. Declaring it is only safe when something
     # verifies it, so every document that states the number is compared against
