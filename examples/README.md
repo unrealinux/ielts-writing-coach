@@ -41,5 +41,5 @@ python3 scripts/report_to_docx.py --validate-only /tmp/重跑.docx
 | `sample-task2-offtopic-essay.txt` | 跑题 | 语言最好（GRA 8.0）却答了另一个问题 → TR 5.0 |
 | `sample-task1-chart-essay.txt` | Task 1 无概述 | 缺 overview（TA 上限 5.0）+ 100% 纯报数 + 时态混用 |
 
-三篇 Task 2 样例的总分是 6.0 / 6.5 / 7.0，而 TR 是 6.0 / 5.5 / 5.0——
+三篇 Task 2 样例的中点总分是 6.0 / 6.5 / 7.0，而 TR 是中点 6.0 / 5.5 / 5.0——
 **语言越好，内容问题越难察觉**，这是这个工具最想说明的一件事。
