@@ -1,6 +1,6 @@
 # 使用说明
 
-> `ielts-writing-coach` v1.16.1 ｜ 面向使用者，不假设你懂代码或看过源码。
+> `ielts-writing-coach` v1.16.2 ｜ 面向使用者，不假设你懂代码或看过源码。
 > **想看一遍完整的真实走查，直接读 [`USAGE-EXAMPLE.md`](USAGE-EXAMPLE.md)**——
 > 一篇作文从贴进对话到拿到报告与批改稿，每一步都有实际输出。
 > 想了解设计原理与竞品对比，看 `README.md`；想改这个 skill，看 `SKILL.md`；
@@ -402,18 +402,25 @@ python3 scripts/calibrate.py ~/ielts-calibration
 
 ## 13. 安装与分享
 
-### 安装位置（三种，任选）
+### 安装位置（四种，任选）
 
-skill 的发现规则：扫描根目录**下一层**的 `<name>/SKILL.md`。
+发现规则两条，都必须满足：
 
-| 用途 | 路径 |
-|---|---|
-| 只给当前项目用 | `<项目根>/.agents/skills/ielts-writing-coach/` |
-| 给本机所有项目用（推荐） | `~/.agents/skills/ielts-writing-coach/` |
-| DSH 用户级 | `~/.dsh/skills/ielts-writing-coach/` |
+1. 放在某个**被扫描的根**的**第一层** —— 目录包 `<name>/SKILL.md`，或扁平文件 `<name>.md`。
+   **嵌套的 `**/SKILL.md` 不会被发现**。
+2. `<项目根>` 指**最近的含 `.git` 的祖先目录**（没有则用当前工作目录）。
+
+| 作用范围 | 路径 | 优先级 |
+|---|---|---|
+| 只给当前项目用 | `<项目根>/.dsh/skills/ielts-writing-coach/` | 100（本项目最高） |
+| 只给当前项目用 | `<项目根>/.agents/skills/ielts-writing-coach/` | 200 |
+| 给本机所有项目用（推荐） | `~/.agents/skills/ielts-writing-coach/` | 500 |
+| DSH 用户级 | `~/.dsh/skills/ielts-writing-coach/` | 400 |
+
+> 数字是扫描优先级（越小越先）。项目级优先于用户级，所以项目里放一份能覆盖用户级那份。
 
 ```bash
-unzip ielts-writing-coach-skill-vX.Y.Z.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-v1.16.2.zip -d ~/.agents/skills/
 ```
 
 **装好后无需重启**——运行中的 harness 会监视 skill 根目录，新增或修改会在下一个模型步骤自动进入目录。
@@ -424,7 +431,7 @@ unzip ielts-writing-coach-skill-vX.Y.Z.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py
 ```
 
-会跑 **213 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
+会跑 **215 项**检查（文件完整性、解析逻辑、聚合、docx 结构与幂等性、版本与 CI 承诺、文档声明一致性）。末尾会报出通过数。
 
 ### 分享给别人
 

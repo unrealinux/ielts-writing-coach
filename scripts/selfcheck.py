@@ -1464,6 +1464,52 @@ def main():
         shutil.rmtree(cal_dir, ignore_errors=True)
 
     print("\n[17] documentation claims")
+    # The install command is the first thing a user copies, and it was wrong in
+    # three different ways at once: README.md said v1.0.0 (eleven releases
+    # stale), README.en.md said the current version, and USAGE.md said "vX.Y.Z"
+    # (not copy-pasteable at all). This is the count-rot failure again, on a
+    # different number -- so it gets the same treatment. RELEASING.md keeps a
+    # placeholder on purpose because it is a template for the maintainer, so
+    # only the user-facing docs are checked.
+    stale_install = []
+    for name in ("README.md", "README.en.md", "USAGE.md"):
+        body = open(os.path.join(ROOT, name), encoding="utf-8").read()
+        # Anchored to the unzip line so README.md's packaging template, which
+        # legitimately holds vX.Y.Z, cannot satisfy it.
+        declared = re.findall(r"unzip ielts-writing-coach-skill-v([\w.]+)\.zip", body)
+        if not version or declared != [version]:
+            stale_install.append("%s says %s" % (name, declared or "nothing"))
+    check(not stale_install,
+          "every user-facing install command names the current version "
+          "(v%s; %s)" % (version or "?", "; ".join(stale_install) or "all agree"))
+
+    # The install table listed three of the four default roots: it omitted
+    # <projectRoot>/.dsh/skills, which is rank 100 -- the highest-priority
+    # project root, and the one a reader is most likely to want. Verified
+    # against @deepseek-ai/dsh-skill-filesystem's own "Roots and priority"
+    # table rather than from memory. Every user-facing doc carries all four so a
+    # reader on any of them gets the same answer.
+    missing_roots = []
+    for name in ("README.md", "README.en.md", "USAGE.md"):
+        body = open(os.path.join(ROOT, name), encoding="utf-8").read()
+        # Full prefixes, not fragments: "/.dsh/skills/" is a substring of
+        # "~/.dsh/skills/", so the fragment form passed even after the
+        # project-level row was deleted -- a guard testing a string rather than
+        # the claim, for the third time in this file.
+        required = (
+            ("project .dsh", ("<项目根>/.dsh/skills/", "<projectRoot>/.dsh/skills/")),
+            ("project .agents", ("<项目根>/.agents/skills/", "<projectRoot>/.agents/skills/")),
+            ("user .agents", ("~/.agents/skills/",)),
+            ("user .dsh", ("~/.dsh/skills/",)),
+        )
+        absent = [label for label, options in required
+                  if not any(option in body for option in options)]
+        if absent:
+            missing_roots.append("%s lacks %s" % (name, ", ".join(absent)))
+    check(not missing_roots,
+          "every user-facing install table lists all four default roots (%s)"
+          % ("; ".join(missing_roots) or "all present"))
+
     # A coverage number written in prose rots the moment a check is added; this
     # bundle got it wrong four times. Declaring it is only safe when something
     # verifies it, so every document that states the number is compared against
@@ -1506,6 +1552,7 @@ def main():
           "every document's declared count matches the real total "
           "(total must be %d -- the TOTAL, not the passing count; %s)"
           % (total, "; ".join(problems) or "all agree"))
+
 
     print("")
     if failures:

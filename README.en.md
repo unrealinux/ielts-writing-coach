@@ -9,7 +9,7 @@ it, as an interval rather than a single number (see below).
 
 Zero dependencies (Python standard library only), offline, and byte-reproducible.
 
-**Version 1.16.1**
+**Version 1.16.2**
 
 ---
 
@@ -61,8 +61,8 @@ report.
 ## Install
 
 ```bash
-unzip ielts-writing-coach-skill-v1.16.1.zip -d ~/.agents/skills/
-python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 213 checks
+unzip ielts-writing-coach-skill-v1.16.2.zip -d ~/.agents/skills/
+python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 215 checks
 ```
 
 Or clone into the same place:
@@ -72,8 +72,19 @@ git clone https://github.com/unrealinux/ielts-writing-coach.git \
   ~/.agents/skills/ielts-writing-coach
 ```
 
-The skill is discovered from any of: `<project>/.agents/skills/`, `~/.agents/skills/`,
-`~/.dsh/skills/`. **No restart needed** — a running harness watches the skill roots.
+Discovered from the **first level** of any scanned root — a directory bundle
+`<name>/SKILL.md`, or a flat `<name>.md`. Nested `**/SKILL.md` files are deliberately
+not discovered. `<projectRoot>` is the nearest ancestor containing `.git`.
+
+| Scope | Path | Priority |
+|---|---|---|
+| This project | `<projectRoot>/.dsh/skills/ielts-writing-coach/` | 100 (highest) |
+| This project | `<projectRoot>/.agents/skills/ielts-writing-coach/` | 200 |
+| All projects (recommended) | `~/.agents/skills/ielts-writing-coach/` | 500 |
+| User-level DSH | `~/.dsh/skills/ielts-writing-coach/` | 400 |
+
+Lower rank wins, so a copy inside a project overrides your user-level one.
+**No restart needed** — a running harness watches the skill roots.
 
 ## Use
 
@@ -108,7 +119,7 @@ judge the output without running anything.
 
 | | |
 |---|---|
-| **213 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
+| **215 self-checks** | file integrity, parsing, aggregation, DOCX structure and idempotency, task-type branching, version consistency, licence detectability, link integrity, CI-versus-docs consistency |
 | **19 evaluation cases** | grammar-error, empty-argument, off-topic, Task 1 chart, GT letter |
 | **Independent DOCX readers** | macOS `textutil` parses it; `qlmanage` **renders** it through Apple's layout engine |
 | **CI** | self-check runs on Python 3.8 – 3.13, plus a guard that fails if any script imports anything outside the standard library |
