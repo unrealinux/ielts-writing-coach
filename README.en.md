@@ -9,7 +9,7 @@ it, as an interval rather than a single number (see below).
 
 Zero dependencies (Python standard library only), offline, and byte-reproducible.
 
-**Version 1.17.1**
+**Version 1.17.2**
 
 ---
 
@@ -61,7 +61,7 @@ report.
 ## Install
 
 ```bash
-unzip ielts-writing-coach-skill-v1.17.1.zip -d ~/.agents/skills/
+unzip ielts-writing-coach-skill-v1.17.2.zip -d ~/.agents/skills/
 python3 ~/.agents/skills/ielts-writing-coach/scripts/selfcheck.py    # 222 checks
 ```
 
