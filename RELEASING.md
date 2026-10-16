@@ -152,7 +152,7 @@ open /tmp/ql/reviewed-task2.docx.png
 
 | 平台类型 | 需要什么 | 本项目现状 |
 |---|---|---|
-| `npx skills add <owner>/<repo>` 类安装器 | 公开仓库，且仓库里能定位到 `SKILL.md` | ⚠️ **仓库形状与 zip 形状不同，见下** |
+| `npx skills add <owner>/<repo>` 类安装器 | 公开仓库，且仓库里能定位到 `SKILL.md` | ✅ **已实测通过**（见 3.1）|
 | skill 市场（按仓库索引） | 公开仓库 + 清晰的 README | ✅ README 已备 |
 | 需要 manifest 的市场 | 通常要 `manifest.json` 或 `.claude-plugin/marketplace.json` | ❌ 未提供——**按目标市场的格式要求再补**，不要凭空造一个格式 |
 
@@ -166,28 +166,32 @@ open /tmp/ql/reviewed-task2.docx.png
 这两者**不等价**，而本文件以前只写「`<name>/SKILL.md` 的目录形状正确」——那描述的是 zip，
 却被当成了仓库的凭据。安装器读的是**仓库**，所以这句话当时是**没验证过的推断**。
 
-**已核实的部分**（2026-09-23）：`npx skills`（v1.7.0，来自 `vercel-labs/skills`）能把
-`unrealinux/ielts-writing-coach` **解析为合法来源**：
+**已实测通过**（2026-10-16，仓库转公开后）：端到端跑通了，仓库根放 `SKILL.md` 是可用的形状。
+
+```bash
+npx skills add unrealinux/ielts-writing-coach --list
+```
+
+输出：
 
 ```
 ◇  Source: https://github.com/unrealinux/ielts-writing-coach.git
+◇  Repository cloned
+◇  Found 1 skill
+    ielts-writing-coach
+      Use when the user wants an IELTS essay corrected, graded, scored, or rewritten …
 ```
 
-它的 `init` 帮助也写明支持两种形状（`creates <name>/SKILL.md or ./SKILL.md`），
-所以仓库根放 `SKILL.md` 是**被支持的形状之一**。
+`Found 1 skill` + 正确的 `description` 说明**发现与解析都通**。
 
-**未核实的部分**：本机到 github.com 的 **HTTPS** 连接不稳定（`git clone` 报
-`Failed to connect to github.com port 443`、npm 也超时），所以**端到端安装没有跑完**。
-「形状正确」目前仍是**基于工具文档与来源解析的推断，不是实测通过的安装**。
+> 历史：2026-09-23 首次验证时本机到 github.com 的 HTTPS 不稳定（`git clone` 报
+> `Failed to connect to github.com port 443`），只跑到「解析出 Source」就断了，
+> 当时把它记成了**推断**。网络恢复后补跑，结论与推断一致。
 
-**要真正验证**（在任意一台网络正常的机器上，一条命令）：
-
-```bash
-npx skills add unrealinux/ielts-writing-coach --list   # 只列出，不安装
-```
-
-能列出 `ielts-writing-coach` 即证明形状可用；列出为空或报错，则把仓库改成
-`<name>/SKILL.md` 子目录结构（同时要改 `git archive --prefix`，否则 zip 会多一层）。
+**仍未实测的部分**：`--list` 只证明**发现**成功，没有真正**安装并加载**。
+要覆盖最后一环，需要在一个干净环境里跑一次不带 `--list` 的安装（会写入
+`~/.agents/skills/`），然后确认 agent 能真的加载它。**发布说明里别把 `--list`
+说成「已安装可用」。**
 
 **关于 manifest**：本项目刻意**没有**预先创建 manifest，因为：
 
@@ -207,7 +211,7 @@ npx skills add unrealinux/ielts-writing-coach --list   # 只列出，不安装
 □ git status 干净（`git archive` 只打已提交内容，脏工作区会静默少文件）
 □ 版本号 tag 与 zip 文件名一致，zip 由 `git archive` 打在 tag 上（见 2.3）
 □ 解压发布的那个包，在里面再跑一次 selfcheck
-□ 首次发布或改过目录结构时，在**网络正常**的机器上跑 `npx skills add <owner>/<repo> --list`（见 3.1）
+□ 改过目录结构后重跑 `npx skills add <owner>/<repo> --list`，确认仍能 `Found 1 skill`（见 3.1）
 □ 发布说明**先讲报告、再讲分数**，并写清：分数是**区间估计**、绝对分典型误差约半个档位、
   排序比绝对值可信；不读图表图片；启发式会误报漏报
 ```
