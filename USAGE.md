@@ -460,6 +460,7 @@ ielts-writing-coach/
 ├── README.md                     # 项目说明：设计要点、竞品对比、版本记录
 ├── USAGE.md                      # 本文件
 ├── RELEASING.md                  # 发布到 GitHub / skill 市场前要做什么
+├── WORKBUDDY.md                  # 打 WorkBuddy 上架包、提交审核的步骤与风险
 ├── LICENSE                       # 标准 MIT 正文
 ├── NOTICE.md                     # 许可说明、第三方致谢、IELTS 商标声明
 ├── examples/                     # 现成的产物示例：批改报告 + 带批注的 docx
@@ -475,7 +476,7 @@ ielts-writing-coach/
 ├── templates/
 │   ├── report-template.md        # 批改报告模板（含必备小节）
 │   └── calibration-log.md        # 校准记录模板（每篇填 6 项，量这个工具对你准不准）
-├── scripts/                      # 七个工具，零依赖
+├── scripts/                      # 零依赖工具
 │   ├── analyze_essay.py          #   客观预分析
 │   ├── report_to_docx.py         #   报告 → 带批注 docx
 │   ├── track_progress.py         #   跨篇趋势
@@ -483,7 +484,8 @@ ielts-writing-coach/
 │   ├── audit_report.py           #   报告审计（重复扣分检查）
 │   ├── ielts_codes.py            #   共享代码表
 │   ├── check_stdlib_only.py      #   断言所有脚本只用标准库
-│   └── selfcheck.py              #   自检
+│   ├── selfcheck.py              #   自检
+│   └── build_workbuddy.py        #   打 WorkBuddy 上架 zip（生成它的 frontmatter）
 └── evals/                        # 测试资料
     ├── evals.json                #   17 个评测用例
     └── samples/                  #   8 个样例（题目 + 作文，含 Task 1 与 GT 语料）

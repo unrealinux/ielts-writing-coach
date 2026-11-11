@@ -155,6 +155,7 @@ open /tmp/ql/reviewed-task2.docx.png
 | `npx skills add <owner>/<repo>` 类安装器 | 公开仓库，且仓库里能定位到 `SKILL.md` | ✅ **已实测通过**（见 3.1）|
 | skill 市场（按仓库索引） | 公开仓库 + 清晰的 README | ✅ README 已备 |
 | 需要 manifest 的市场 | 通常要 `manifest.json` 或 `.claude-plugin/marketplace.json` | ❌ 未提供——**按目标市场的格式要求再补**，不要凭空造一个格式 |
+| WorkBuddy 技能市场（腾讯） | 独立 frontmatter + 单顶层目录的 zip | ✅ 已备，见 **3.2** |
 
 ### 3.1 仓库形状 ≠ zip 形状（这一条以前写错过）
 
@@ -198,6 +199,23 @@ npx skills add unrealinux/ielts-writing-coach --list
 - 各市场格式不统一，猜错格式等于多一份需要同步、且没人读的元数据
 - 版本真源已放在 `SKILL.md` frontmatter 的 `metadata.version`——**那是安装器唯一会读的文件**，放这里不会漂移
 - 等你确定目标市场，按它的文档加，并**把它接进 `selfcheck.py` 的版本一致性校验**（否则又多一处会漂移的版本号）
+
+---
+
+### 3.2 WorkBuddy（腾讯）技能市场
+
+它的 frontmatter 与本仓库**不兼容**（要 `display_name` / `description_zh` / `examples_zh` / 顶层 `version` / `author`），
+所以不要直接传仓库，传**构建出来的 zip**：
+
+```bash
+python3 scripts/build_workbuddy.py --author "入驻主体名称"
+# → dist/ielts-writing-coach-workbuddy-v<版本>.zip
+```
+
+- 包内形状：`ielts-writing-coach/SKILL.md`（单顶层目录），正文逐字取自仓库 SKILL.md
+- 版本号在**构建时**从 `metadata.version` 注入，仓库里没有第二处版本号，所以不需要再加一条 selfcheck 校验
+- `dist/` 已进 `.gitignore`
+- 完整流程、审核前必查、已知风险见 **[`WORKBUDDY.md`](WORKBUDDY.md)**
 
 ---
 
